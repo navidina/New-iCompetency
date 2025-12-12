@@ -100,18 +100,28 @@ const GameShell: React.FC<GameShellProps> = ({
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-4">
                 {/* Timer Display */}
                 {stats.timeLeft !== undefined && (
-                    <div className={`flex items-center gap-2 font-black text-xl tabular-nums px-5 py-1.5 rounded-full border-2 ${stats.timeLeft < 10 ? 'border-red-500 bg-red-50 text-red-600 animate-pulse' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
+                    <div
+                        role="status"
+                        aria-live="polite"
+                        aria-label={`زمان باقی مانده: ${Math.ceil(stats.timeLeft)} ثانیه`}
+                        className={`flex items-center gap-2 font-black text-xl tabular-nums px-5 py-1.5 rounded-full border-2 ${stats.timeLeft < 10 ? 'border-red-500 bg-red-50 text-red-600 animate-pulse' : 'border-slate-200 bg-slate-50 text-slate-700'}`}
+                    >
                         <Timer size={18} className="opacity-50" />
                         {toPersianNum(Math.ceil(stats.timeLeft))}
                     </div>
                 )}
-                
+
                 {/* Lives Display (Hearts) */}
                 {stats.lives !== undefined && (
-                    <div className="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200">
+                    <div
+                        className="flex items-center gap-1 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200"
+                        role="status"
+                        aria-live="polite"
+                        aria-label={`جان های باقی مانده: ${stats.lives} از ${stats.maxLives || 3}`}
+                    >
                         {Array.from({ length: stats.maxLives || 3 }).map((_, i) => (
-                            <Heart 
-                                key={i} 
+                            <Heart
+                                key={i}
                                 size={20} 
                                 className={`transition-all duration-300 ${i < (stats.lives || 0) ? 'text-rose-500 fill-rose-500' : 'text-slate-300 fill-slate-200'}`} 
                             />
