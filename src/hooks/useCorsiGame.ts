@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { generateCorsiSequence } from '../utils/generators';
 import { CorsiConfig } from '../types';
+import { sfx } from '../../services/audioService';
 
 type GameState = 'IDLE' | 'DISPLAYING' | 'INPUT' | 'FEEDBACK' | 'GAMEOVER' | 'COMPLETED';
 
@@ -77,8 +78,17 @@ export const useCorsiGame = (config: CorsiConfig) => {
     }
   }, [gameState, sequence, config]);
 
+  // Audio cue for each block flash during the display phase
+  useEffect(() => {
+    if (gameState === 'DISPLAYING' && activeBlock !== null) {
+      sfx.playHover();
+    }
+  }, [activeBlock, gameState]);
+
   const handleBlockClick = useCallback((index: number) => {
     if (gameState !== 'INPUT') return;
+
+    sfx.playClick();
 
     const newUserSequence = [...userSequence, index];
     setUserSequence(newUserSequence);
@@ -107,6 +117,7 @@ export const useCorsiGame = (config: CorsiConfig) => {
     setFeedback(success ? 'correct' : 'wrong');
 
     if (success) {
+      sfx.playSuccess();
       totalCorrectRef.current += 1;
       setConsecutiveSuccesses(prev => prev + 1);
       setConsecutiveFailures(0);
@@ -133,6 +144,7 @@ export const useCorsiGame = (config: CorsiConfig) => {
         }
       }, 1000);
     } else {
+      sfx.playError();
       totalErrorsRef.current += 1;
       setConsecutiveFailures(prev => prev + 1);
       setConsecutiveSuccesses(0);

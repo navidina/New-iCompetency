@@ -68,7 +68,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onStartScenario, isDarkMode
            <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl transform transition-all scale-100 animate-scale-in m-4 border border-white/20" onClick={e => e.stopPropagation()}>
                <div className="flex justify-between items-center mb-6">
                    <h3 className="font-bold text-xl text-slate-900 dark:text-white">اطلاعات پرونده</h3>
-                   <button onClick={() => setShowProfileModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
+                   <button
+                     onClick={() => setShowProfileModal(false)}
+                     aria-label="بستن پنجره پروفایل"
+                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
+                   >
                       <X className="text-slate-400" size={24} />
                    </button>
                </div>
@@ -119,8 +123,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onStartScenario, isDarkMode
               </span>
            </div>
 
-           <button 
+           <button
               onClick={toggleTheme}
+              aria-label={isDarkMode ? 'تغییر به حالت روز' : 'تغییر به حالت شب'}
               className="md:hidden bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700"
            >
                {isDarkMode ? <Moon className="w-5 h-5 text-indigo-400" /> : <Sun className="w-5 h-5 text-amber-500" />}
