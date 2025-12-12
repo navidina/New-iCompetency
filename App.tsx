@@ -294,7 +294,7 @@ function App() {
       changeView(AppView.DASHBOARD);
   }
 
-  const handleStartGeneration = async (methodology: 'Polya' | 'SixSigma', difficulty: string, focusArea: string) => {
+  const handleStartGeneration = async (methodology: 'FactFinding' | 'SixSigma', difficulty: string, focusArea: string) => {
     setLoading(true);
     setLoadingMessage(`در حال طراحی سناریو با هوش مصنوعی...`);
     try {
@@ -375,7 +375,7 @@ function App() {
                  {view === AppView.DASHBOARD && (
                     <Dashboard 
                       user={user} 
-                      onStartScenario={() => handleStartGeneration('Polya', 'Medium', 'Strategic Thinking')} 
+                      onStartScenario={() => handleStartGeneration('FactFinding', 'Medium', 'Strategic Thinking')}
                       isDarkMode={darkMode}
                       toggleTheme={toggleTheme}
                     />
@@ -399,7 +399,7 @@ function App() {
                        unlockedNodes={user.unlockedNodes}
                        completedNodes={user.completedNodes}
                        onSelectNode={(v) => changeView(v)}
-                       onStartScenario={() => handleStartGeneration('Polya', 'Hard', 'Complex Problem Solving')}
+                       onStartScenario={() => handleStartGeneration('FactFinding', 'Hard', 'Complex Problem Solving')}
                     />
                  )}
                  {view === AppView.MINIGAME_HUB && (

@@ -62,7 +62,7 @@ export interface Scenario {
   industry: string;
   description: string;
   timeLimitMinutes: number;
-  methodology: 'Polya' | 'SixSigma' | 'DesignThinking' | 'General';
+  methodology: 'FactFinding' | 'SixSigma' | 'DesignThinking' | 'General';
   phases: ScenarioPhase[];
 }
 

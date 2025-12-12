@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AppView, UserProfile } from '../types';
 import { 
   Layers, Calculator, Zap, Box, Compass, Eye, LayoutGrid, BrainCircuit, Lock, CheckCircle2, Play, Grid, Search
@@ -12,6 +12,47 @@ interface Props {
 }
 
 const MiniGameHub: React.FC<Props> = ({ onSelectGame, user }) => {
+
+  const [expandedGame, setExpandedGame] = useState<string | null>(null);
+
+  const scoreReasons: Record<string, { summary: string; factors: string[] }> = {
+    [AppView.MINIGAME_MEMORY]: {
+      summary: "امتیاز حافظه ترکیبی از دقت حفظ توالی، یادآوری جفت‌ها و واکنش سریع در N-Back است.",
+      factors: ["توالی‌های طولانی‌تر در کورسی = امتیاز بالاتر", "درصد یادآوری جفت‌ها", "کاهش خطاها و تأخیر در N-Back"],
+    },
+    [AppView.MINIGAME_MATH]: {
+      summary: "امتیاز ریاضی بر پایه سطح سوالات، سرعت پاسخ و کمبوهای متوالی محاسبه می‌شود.",
+      factors: ["سطوح بالاتر امتیاز پایه بیشتری دارند", "پاسخ زیر ۵۰٪ زمان = ضریب سرعت", "رشته پاسخ‌های صحیح کمبو می‌سازد"],
+    },
+    [AppView.MINIGAME_PATTERN]: {
+      summary: "امتیاز تطابق الگو از تعداد پاسخ صحیح و سرعت تکمیل ماتریس‌ها به دست می‌آید.",
+      factors: ["شناسایی سریع الگوهای ۴×۴", "کاهش استفاده از حدس", "پاسخ‌های پیاپی دقیق"],
+    },
+    [AppView.MINIGAME_SPEED]: {
+      summary: "امتیاز سرعت ادراکی با دقت تشخیص و میانگین زمان واکنش سنجیده می‌شود.",
+      factors: ["واکنش‌های زیر ۲ ثانیه", "حداقل خطا در تشخیص", "ثبات عملکرد در تمام جفت‌ها"],
+    },
+    [AppView.MINIGAME_VISUALIZATION]: {
+      summary: "امتیاز تجسم بر اساس درست‌بودن چرخش‌ها و زاویه‌های دشوار افزایش می‌یابد.",
+      factors: ["زاویه‌های ۹۰° به بالا ضریب بالاتر دارند", "تمایز اشکال قرینه", "پاسخ در زمان محدود"],
+    },
+    [AppView.MINIGAME_ORIENTATION]: {
+      summary: "امتیاز جهت‌یابی دقت تبدیل جهت نسبی به مطلق را اندازه می‌گیرد.",
+      factors: ["تشخیص سریع زاویه قطب‌نما", "پاسخ صحیح در چرخش‌های ۴۵°", "ثبات در مراحل متوالی"],
+    },
+    [AppView.MINIGAME_STROOP]: {
+      summary: "امتیاز تمرکز از اختلاف واکنش در محرک‌های سازگار و ناسازگار و دقت کلی به دست می‌آید.",
+      factors: ["زمان واکنش کمتر در حالت ناسازگار", "دقت بالای رنگ‌خوانی", "کاهش False Alarm"],
+    },
+    [AppView.MINIGAME_MULTITASK]: {
+      summary: "امتیاز پردازش موازی نسبت کارایی تک‌وظیفه‌ای به چندوظیفه‌ای و دقت هر دو را می‌سنجد.",
+      factors: ["حفظ دقت هنگام سوئیچ", "زمان پاسخ متوازن", "کاهش هزینه دوتایی"],
+    },
+    [AppView.MINIGAME_FACTFINDING]: {
+      summary: "امتیاز حقیقت‌یابی از کارایی هزینه/اطلاعات و انتخاب تصمیم درست محاسبه می‌شود.",
+      factors: ["پرداخت کم برای داده ضروری", "انتخاب تصمیم نهایی صحیح", "ترکیب منابع با اطمینان بالا"],
+    },
+  };
 
   const cognitiveGames = [
     {
@@ -126,11 +167,13 @@ const MiniGameHub: React.FC<Props> = ({ onSelectGame, user }) => {
 
   const renderGameCard = (game: any, index: number) => {
     // Force unlock all games
-    const isUnlocked = true; 
+    const isUnlocked = true;
     const isCompleted = game.nodeId !== '' && user.completedNodes.includes(game.nodeId);
-    
+    const hasScore = game.progress > 0;
+    const details = scoreReasons[game.id];
+
     return (
-        <div 
+        <div
             key={game.id}
             onClick={() => isUnlocked && onSelectGame(game.id)}
             style={{ animationDelay: `${index * 100}ms` }}
@@ -165,20 +208,46 @@ const MiniGameHub: React.FC<Props> = ({ onSelectGame, user }) => {
                 </p>
                 
                 {isUnlocked ? (
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                                <div className={`h-full ${game.bar} transition-all duration-1000 ease-out`} style={{width: `${game.progress}%`}}></div>
-                            </div>
-                            <span className={`text-[10px] font-bold ${game.accent}`}>{toPersianNum(game.progress)}%</span>
-                        </div>
-                        <button className="w-full py-3 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-2 group-hover:bg-slate-900 group-hover:text-white dark:group-hover:bg-indigo-600 transition-all">
-                            {isCompleted ? <Play size={14} fill="currentColor"/> : null}
-                            {isCompleted ? 'تکرار آزمون' : 'شروع آزمون'}
-                        </button>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div className={`h-full ${game.bar} transition-all duration-1000 ease-out`} style={{width: `${game.progress}%`}}></div>
+                      </div>
+                      <span className={`text-[10px] font-bold ${game.accent}`}>{toPersianNum(game.progress)}%</span>
                     </div>
+                    {hasScore && details && (
+                      <div className="rounded-2xl bg-slate-50 dark:bg-slate-700/60 p-3 border border-slate-100 dark:border-slate-700">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-xs font-bold text-slate-800 dark:text-white mb-1">جزئیات امتیاز</p>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">{details.summary}</p>
+                          </div>
+                          <button
+                            className="text-[11px] font-bold text-indigo-600 dark:text-indigo-300 underline underline-offset-4"
+                            onClick={(e) => { e.stopPropagation(); setExpandedGame(expandedGame === game.id ? null : game.id); }}
+                            aria-expanded={expandedGame === game.id}
+                            aria-label={`نمایش جزئیات امتیاز ${game.title}`}
+                          >
+                            {expandedGame === game.id ? 'بستن' : 'مشاهده'}
+                          </button>
+                        </div>
+                        {expandedGame === game.id && (
+                          <ul className="mt-2 space-y-1 list-disc list-inside text-[11px] text-slate-600 dark:text-slate-300">
+                            {details.factors.map((item, idx) => (
+                              <li key={idx}>{item}</li>
+                            ))}
+                            <li className="font-bold text-slate-800 dark:text-white">امتیاز فعلی: {toPersianNum(Math.max(game.progress, 1))} از ۱۰۰</li>
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                    <button className="w-full py-3 rounded-xl bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-2 group-hover:bg-slate-900 group-hover:text-white dark:group-hover:bg-indigo-600 transition-all">
+                      {isCompleted ? <Play size={14} fill="currentColor"/> : null}
+                      {isCompleted ? 'تکرار آزمون' : 'شروع آزمون'}
+                    </button>
+                  </div>
                 ) : (
-                    <div className="h-4"></div> 
+                  <div className="h-4"></div>
                 )}
             </div>
         </div>

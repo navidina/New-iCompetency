@@ -37,7 +37,7 @@ export const generateScenario = async (
   difficulty: string,
   industry: string,
   focusArea: string,
-  methodology: 'Polya' | 'SixSigma' = 'Polya'
+  methodology: 'FactFinding' | 'SixSigma' = 'FactFinding'
 ): Promise<Scenario> => {
   
   let methodologyPrompt = "";
@@ -54,8 +54,11 @@ export const generateScenario = async (
     `;
   } else {
     methodologyPrompt = `
-      Methodology: Polya (Understand, Plan, Execute, Review).
-      The scenario must have 4 distinct phases corresponding to Polya's method.
+      Methodology: Fact Finding (Gather, Verify, Decide).
+      The scenario must have 3 clear phases tailored for evidence-driven decisions:
+      1. Gather Information (جمع‌آوری داده): List available sources, costs, و زمان.
+      2. Evaluate Reliability (سنجش اعتبار): وزن‌دهی به منابع بر اساس دقت و ریسک.
+      3. Decide & Justify (تصمیم و توجیه): انتخاب اقدام نهایی با استدلال مبتنی بر شواهد.
     `;
   }
 
@@ -177,7 +180,7 @@ export const evaluateSession = async (
 
   const prompt = `
     Role: Fair and Constructive Expert Problem Solving Coach (Persian Language).
-    Methodology: ${scenario.methodology} (${scenario.methodology === 'SixSigma' ? 'DMAIC Model' : 'Polya Model'}).
+    Methodology: ${scenario.methodology} (${scenario.methodology === 'SixSigma' ? 'DMAIC Model' : 'Fact Finding Flow'}).
     
     Scenario Context:
     Title: ${scenario.title}

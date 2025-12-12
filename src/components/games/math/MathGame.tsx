@@ -96,12 +96,7 @@ const MathGame: React.FC<MathGameProps> = ({ onFinish }) => {
       stats={{
         score,
         level: currentLevel,
-        timeLeft: timeLeft / 1000, // GameShell expects seconds usually? No, it uses Math.ceil(stats.timeLeft). If I pass ms, it will show huge number.
-        // Wait, GameShell render: {toPersianNum(Math.ceil(stats.timeLeft))}
-        // If I pass 300000, it shows 300000.
-        // Usually timer is in seconds.
-        // My hook uses ms.
-        // I should pass seconds.
+        timeLeft: Math.ceil(timeLeft / 1000),
         combo: streak
       }}
       gameState={shellState}
@@ -174,6 +169,8 @@ const MathGame: React.FC<MathGameProps> = ({ onFinish }) => {
             <button
                 onClick={handleBackspace}
                 className="bg-slate-100 text-slate-600 rounded-xl font-bold text-xl hover:bg-slate-200 active:scale-95 transition-all flex items-center justify-center"
+                aria-label="حذف آخرین رقم"
+                title="حذف آخرین رقم"
             >
                 <Delete className="w-6 h-6" />
             </button>
@@ -181,9 +178,11 @@ const MathGame: React.FC<MathGameProps> = ({ onFinish }) => {
             {[1, 2, 3].map(n => (
                 <NumpadBtn key={n} onClick={() => handleNumpadClick(n.toString())}>{n}</NumpadBtn>
             ))}
-             <button
+            <button
                 onClick={submitAnswer}
                 className="row-span-2 bg-blue-600 text-white rounded-xl font-bold text-xl hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center shadow-lg shadow-blue-200"
+                aria-label="تایید پاسخ"
+                title="تایید پاسخ"
             >
                 <Check className="w-8 h-8" />
             </button>

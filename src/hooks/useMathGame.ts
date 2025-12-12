@@ -41,7 +41,7 @@ export const useMathGame = (customConfig?: Partial<MathGameConfig>) => {
 
   // Timer Logic
   useEffect(() => {
-    if (gameState === 'PLAYING' && timeLeft > 0) {
+    if (gameState === 'PLAYING') {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 100) {
@@ -56,7 +56,7 @@ export const useMathGame = (customConfig?: Partial<MathGameConfig>) => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [gameState, timeLeft]);
+  }, [gameState]);
 
   const startGame = useCallback(() => {
     setGameState('PLAYING');
@@ -73,7 +73,7 @@ export const useMathGame = (customConfig?: Partial<MathGameConfig>) => {
     setQuestion(q);
     setUserInput('');
     setFeedback('none');
-    questionStartTimeRef.current = Date.now();
+    questionStartTimeRef.current = performance.now();
   };
 
   const handleInput = (val: string) => {
@@ -87,7 +87,7 @@ export const useMathGame = (customConfig?: Partial<MathGameConfig>) => {
     const userAnswer = parseFloat(userInput);
     const isCorrect = Math.abs(userAnswer - question.answer) < 0.01; // Allow small float error
 
-    const now = Date.now();
+    const now = performance.now();
     const timeTaken = now - questionStartTimeRef.current;
 
     // Scoring

@@ -16,7 +16,7 @@ const quotes = [
   { text: "شکست نقطه مقابل موفقیت نیست، بلکه بخشی از موفقیت است.", author: "Arianna Huffington" },
 ];
 
-const BackgroundQuotes: React.FC = () => {
+const BackgroundQuotesComponent: React.FC = () => {
   return (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
       {/* Gradient Overlay for subtle blending */}
@@ -70,5 +70,9 @@ const BackgroundQuotes: React.FC = () => {
     </div>
   );
 };
+
+// Memoized to avoid rerendering the heavy decorative grid when parent state changes.
+const BackgroundQuotes = React.memo(BackgroundQuotesComponent);
+BackgroundQuotes.displayName = 'BackgroundQuotes';
 
 export default BackgroundQuotes;
