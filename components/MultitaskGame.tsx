@@ -129,22 +129,33 @@ const MultitaskGame: React.FC<Props> = ({ onExit, onComplete }) => {
 
         return (
           <div className="h-full flex items-center justify-center bg-purple-50 p-4 animate-fade-in-up">
-              <div className="bg-white p-8 rounded-[2rem] shadow-2xl text-center max-w-md w-full border border-purple-100">
-                 <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
-                     <LayoutGrid size={40} className="text-purple-600" />
+              <div className="bg-white p-8 rounded-[2rem] shadow-2xl max-w-3xl w-full border border-purple-100 md:grid md:grid-cols-[1.2fr,1fr] md:items-center md:gap-10">
+                 <div className="text-center md:text-right space-y-6">
+                    <div className="flex flex-col items-center md:items-start gap-4">
+                        <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center shadow-md">
+                            <LayoutGrid size={40} className="text-purple-600" />
+                        </div>
+                        <div className="text-right">
+                            <h2 className="text-2xl font-black text-slate-800 mb-1">مدیریت همزمان (CAT)</h2>
+                            <div className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-600">
+                                {rating}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row md:items-baseline md:justify-between md:gap-6">
+                        <div className="flex flex-col items-center md:items-start gap-1">
+                            <span className="text-5xl font-black text-purple-600">{toPersianNum(score)}</span>
+                            <span className="text-slate-400 font-bold text-sm">امتیاز وزنی</span>
+                        </div>
+                    </div>
+
+                    <button onClick={() => onComplete(normalizedScore)} className="w-full bg-purple-600 text-white py-3.5 rounded-xl font-bold hover:bg-purple-700 hover:shadow-lg transition-all active:scale-95 md:max-w-xs md:ml-auto">
+                        ثبت نتیجه
+                    </button>
                  </div>
 
-                 <h2 className="text-2xl font-black text-slate-800 mb-1">مدیریت همزمان (CAT)</h2>
-                 <div className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-8 bg-purple-100 text-purple-600">
-                     {rating}
-                 </div>
-
-                 <div className="flex flex-col items-center justify-center gap-1 mb-6">
-                     <span className="text-5xl font-black text-purple-600">{toPersianNum(score)}</span>
-                     <span className="text-slate-400 font-bold text-sm">امتیاز وزنی</span>
-                 </div>
-
-                 <div className="grid grid-cols-2 gap-4 mb-8">
+                 <div className="grid grid-cols-2 gap-4 md:gap-6">
                       <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col items-center">
                           <Split className="text-purple-400 mb-2" size={20}/>
                           <div className="font-black text-slate-800 text-xl">{toPersianNum(accuracy)}٪</div>
@@ -156,10 +167,6 @@ const MultitaskGame: React.FC<Props> = ({ onExit, onComplete }) => {
                           <div className="text-[10px] font-bold text-slate-400">سطح نهایی</div>
                       </div>
                  </div>
-
-                 <button onClick={() => onComplete(normalizedScore)} className="w-full bg-purple-600 text-white py-3.5 rounded-xl font-bold hover:bg-purple-700 hover:shadow-lg transition-all active:scale-95">
-                     ثبت نتیجه
-                 </button>
              </div>
          </div>
         );

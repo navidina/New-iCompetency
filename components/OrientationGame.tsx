@@ -194,24 +194,36 @@ const OrientationGame: React.FC<Props> = ({ onExit, onComplete }) => {
 
       return (
         <div className="h-full flex items-center justify-center bg-slate-900 p-4 animate-fade-in-up font-sans">
-             <div className="bg-slate-800 p-8 rounded-[2rem] shadow-2xl text-center max-w-md w-full border border-slate-700 relative overflow-hidden">
+             <div className="bg-slate-800 p-8 rounded-[2rem] shadow-2xl max-w-3xl w-full border border-slate-700 relative overflow-hidden md:grid md:grid-cols-[1.2fr,1fr] md:items-center md:gap-10">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
-                
-                <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyan-500/20">
-                   <Target size={40} className="text-cyan-400" />
-                </div>
-                
-                <h2 className="text-2xl font-black text-white mb-2">عملیات ناوبری پایان یافت</h2>
-                <div className="inline-block px-4 py-1 rounded-full bg-cyan-900/30 text-cyan-400 font-bold text-sm mb-8 border border-cyan-500/20">
-                    {rating}
-                </div>
-                
-                <div className="flex flex-col items-center gap-1 mb-8">
-                   <span className="text-5xl font-black text-white tracking-tight">{toPersianNum(score)}</span>
-                   <span className="text-xs text-slate-400 font-bold">امتیاز کل</span>
+
+                <div className="text-center md:text-right space-y-6">
+                    <div className="flex flex-col items-center md:items-start gap-4">
+                        <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                           <Target size={40} className="text-cyan-400" />
+                        </div>
+
+                        <div>
+                            <h2 className="text-2xl font-black text-white mb-2">عملیات ناوبری پایان یافت</h2>
+                            <div className="inline-block px-4 py-1 rounded-full bg-cyan-900/30 text-cyan-400 font-bold text-sm border border-cyan-500/20">
+                                {rating}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row md:items-baseline md:justify-between md:gap-6">
+                        <div className="flex flex-col items-center md:items-start gap-1">
+                           <span className="text-5xl font-black text-white tracking-tight">{toPersianNum(score)}</span>
+                           <span className="text-xs text-slate-400 font-bold">امتیاز کل</span>
+                        </div>
+                    </div>
+
+                    <button onClick={() => onComplete(normalizedScore)} className="w-full bg-cyan-600 text-white py-4 rounded-xl font-bold hover:bg-cyan-500 transition-all shadow-lg hover:shadow-cyan-500/30 active:scale-95 md:max-w-xs md:ml-auto">
+                       ثبت رکورد
+                    </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-2 gap-4 md:gap-6">
                      <div className="bg-slate-700/50 rounded-2xl p-4 border border-slate-600">
                          <div className="text-emerald-400 font-black text-xl">{toPersianNum(correctCount)}</div>
                          <div className="text-[10px] font-bold text-slate-400">تشخیص صحیح</div>
@@ -221,10 +233,6 @@ const OrientationGame: React.FC<Props> = ({ onExit, onComplete }) => {
                          <div className="text-[10px] font-bold text-slate-400">سطح نهایی</div>
                      </div>
                 </div>
-
-                <button onClick={() => onComplete(normalizedScore)} className="w-full bg-cyan-600 text-white py-4 rounded-xl font-bold hover:bg-cyan-500 transition-all shadow-lg hover:shadow-cyan-500/30 active:scale-95">
-                   ثبت رکورد
-                </button>
             </div>
         </div>
       );
