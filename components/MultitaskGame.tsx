@@ -1,0 +1,223 @@
+
+import React, { useState, useEffect } from 'react';
+import { LayoutGrid, Clock, Split, Zap, TrendingUp } from 'lucide-react';
+import GameIntro from './GameIntro';
+import { toPersianNum } from '../utils';
+
+interface Props {
+  onExit: () => void;
+  onComplete: (score: number) => void;
+}
+
+const GAME_DURATION = 40;
+
+const MultitaskGame: React.FC<Props> = ({ onExit, onComplete }) => {
+  const [showIntro, setShowIntro] = useState(true);
+  const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
+  const [score, setScore] = useState(0);
+  const [difficulty, setDifficulty] = useState(1); // CAT Level
+  
+  // Task 1: Math (Even/Odd)
+  const [number, setNumber] = useState(0);
+  
+  // Task 2: Color Matching
+  const [colorText, setColorText] = useState('قرمز');
+  const [colorHex, setColorHex] = useState('red');
+  
+  const [finished, setFinished] = useState(false);
+  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+
+  // Stats
+  const [attempts, setAttempts] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
+
+  useEffect(() => {
+    if (showIntro) return;
+
+    generateTasks();
+    const timer = setInterval(() => {
+        setTimeLeft(t => {
+            if (t <= 0.1) {
+                clearInterval(timer);
+                setFinished(true);
+                return 0;
+            }
+            return t - 0.1;
+        });
+    }, 100);
+    return () => clearInterval(timer);
+  }, [showIntro]);
+
+  const generateTasks = () => {
+      setFeedback(null);
+      
+      // CAT Logic: Number range increases with difficulty
+      const maxNum = difficulty > 5 ? 500 : 100;
+      setNumber(Math.floor(Math.random() * maxNum));
+
+      const colors = [
+          {name: 'قرمز', hex: '#ef4444'}, 
+          {name: 'آبی', hex: '#3b82f6'}, 
+          {name: 'سبز', hex: '#22c55e'}
+      ];
+      const textIdx = Math.floor(Math.random() * 3);
+      const hexIdx = Math.random() > 0.5 ? textIdx : Math.floor(Math.random() * 3);
+      
+      setColorText(colors[textIdx].name);
+      setColorHex(colors[hexIdx].hex);
+  };
+
+  const handleAnswer = (isEven: boolean, isMatch: boolean) => {
+      setAttempts(prev => prev + 1);
+      
+      const correctEven = number % 2 === 0;
+      const correctMatch = (colorText === 'قرمز' && colorHex === '#ef4444') || 
+                           (colorText === 'آبی' && colorHex === '#3b82f6') || 
+                           (colorText === 'سبز' && colorHex === '#22c55e');
+      
+      if (isEven === correctEven && isMatch === correctMatch) {
+          setScore(s => s + (10 * difficulty));
+          setCorrectCount(prev => prev + 1);
+          setFeedback('correct');
+          
+          setDifficulty(d => Math.min(10, d + 1));
+
+          if (navigator.vibrate) navigator.vibrate(50);
+      } else {
+          setScore(s => Math.max(0, s - (5 * difficulty)));
+          setFeedback('wrong');
+          
+          setDifficulty(d => Math.max(1, d - 1));
+
+          if (navigator.vibrate) navigator.vibrate(200);
+      }
+      
+      setTimeout(generateTasks, 300);
+  };
+
+  const getRating = (s: number) => {
+      if (s > 80) return "خلبان جنگنده";
+      if (s > 50) return "مدیر پروژه";
+      return "تک‌وظیفه‌ای";
+  };
+
+  if (showIntro) {
+    return (
+      <GameIntro 
+        title="انجام همزمان امور (A15)"
+        description="سیستم تست انطباقی (CAT): در سطوح بالاتر، اعداد پیچیده‌تر و زمان تصمیم‌گیری حیاتی‌تر می‌شود."
+        icon={<LayoutGrid />}
+        gradientFrom="from-purple-500"
+        gradientTo="to-fuchsia-600"
+        accentColor="text-purple-600"
+        onStart={() => setShowIntro(false)}
+      />
+    );
+  }
+
+  if (finished) {
+      const accuracy = attempts > 0 ? Math.round((correctCount / attempts) * 100) : 0;
+      const normalizedScore = Math.min(100, Math.round(score / 30)); 
+      const rating = getRating(normalizedScore);
+
+      return (
+        <div className="h-full flex items-center justify-center bg-purple-50 p-4 animate-fade-in-up">
+            <div className="bg-white p-8 rounded-[2rem] shadow-2xl text-center max-w-md w-full border border-purple-100">
+               <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
+                   <LayoutGrid size={40} className="text-purple-600" />
+               </div>
+               
+               <h2 className="text-2xl font-black text-slate-800 mb-1">مدیریت همزمان (CAT)</h2>
+               <div className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-8 bg-purple-100 text-purple-600">
+                   {rating}
+               </div>
+               
+               <div className="flex flex-col items-center justify-center gap-1 mb-6">
+                   <span className="text-5xl font-black text-purple-600">{toPersianNum(score)}</span>
+                   <span className="text-slate-400 font-bold text-sm">امتیاز وزنی</span>
+               </div>
+               
+               <div className="grid grid-cols-2 gap-4 mb-8">
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col items-center">
+                        <Split className="text-purple-400 mb-2" size={20}/>
+                        <div className="font-black text-slate-800 text-xl">{toPersianNum(accuracy)}٪</div>
+                        <div className="text-[10px] font-bold text-slate-400">دقت</div>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col items-center">
+                        <TrendingUp className="text-purple-400 mb-2" size={20}/>
+                        <div className="font-black text-slate-800 text-xl">{toPersianNum(difficulty)}</div>
+                        <div className="text-[10px] font-bold text-slate-400">سطح نهایی</div>
+                    </div>
+               </div>
+
+               <button onClick={() => onComplete(normalizedScore)} className="w-full bg-purple-600 text-white py-3.5 rounded-xl font-bold hover:bg-purple-700 hover:shadow-lg transition-all active:scale-95">
+                   ثبت نتیجه
+               </button>
+           </div>
+       </div>
+      );
+  }
+
+  const progressPercent = (timeLeft / GAME_DURATION) * 100;
+
+  return (
+    <div className={`h-full text-white flex flex-col p-4 transition-colors duration-300 relative overflow-hidden ${feedback === 'correct' ? 'bg-emerald-900' : feedback === 'wrong' ? 'bg-red-900' : 'bg-purple-900'}`}>
+        
+        {/* Visual Timer Bar - TOP */}
+        <div className="absolute top-0 left-0 w-full h-3 bg-slate-900 z-50">
+            <div 
+                className="h-full bg-purple-400 transition-all duration-100 ease-linear shadow-[0_0_10px_rgba(232,121,249,0.5)]" 
+                style={{ width: `${progressPercent}%` }}
+            ></div>
+        </div>
+
+        <div className="flex justify-between items-center mb-4 mt-2">
+             <div className="flex items-center gap-2 font-bold bg-white/10 px-3 py-1.5 rounded-full"><Clock size={16} /> {toPersianNum(Math.ceil(timeLeft))}</div>
+             <div className="flex items-center gap-2">
+                <div className="text-xs bg-black/20 px-2 py-1 rounded">Lv {toPersianNum(difficulty)}</div>
+                <div className="font-bold text-purple-100 bg-purple-800/50 px-3 py-1.5 rounded-full">{toPersianNum(score)}</div>
+             </div>
+        </div>
+
+        <button onClick={onExit} className="absolute top-6 left-1/2 -translate-x-1/2 text-center text-xs opacity-50 hover:opacity-100">انصراف</button>
+
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            {/* Task 1 */}
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-4 flex flex-col items-center justify-center border border-white/10 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-purple-400/50"></div>
+                <h3 className="text-purple-200 font-bold mb-2 uppercase tracking-widest text-[10px] bg-purple-900/40 px-3 py-1 rounded-full">آیا عدد زوج است؟</h3>
+                <div className="text-8xl font-black text-white drop-shadow-lg">{toPersianNum(number)}</div>
+            </div>
+
+            {/* Task 2 */}
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-4 flex flex-col items-center justify-center border border-white/10 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-pink-400/50"></div>
+                <h3 className="text-slate-200 font-bold mb-2 uppercase tracking-widest text-[10px] bg-pink-900/40 px-3 py-1 rounded-full">رنگ متن تطابق دارد؟</h3>
+                <div className="text-6xl font-black drop-shadow-lg transition-transform hover:scale-110 duration-200" style={{color: colorHex}}>{colorText}</div>
+            </div>
+        </div>
+
+        {/* Controls */}
+        <div className="grid grid-cols-2 gap-3 h-48 max-w-2xl mx-auto w-full">
+             <button onClick={() => handleAnswer(number % 2 === 0, true)} className="bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all rounded-2xl font-bold text-lg shadow-lg border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1 flex flex-col items-center justify-center gap-1 group">
+                 <span className="text-2xl group-hover:-translate-y-1 transition-transform">✅ / ✅</span>
+                 <span className="text-[10px] font-normal opacity-80">زوج + تطابق</span>
+             </button>
+             <button onClick={() => handleAnswer(number % 2 !== 0, false)} className="bg-red-600 hover:bg-red-500 active:scale-95 transition-all rounded-2xl font-bold text-lg shadow-lg border-b-4 border-red-800 active:border-b-0 active:translate-y-1 flex flex-col items-center justify-center gap-1 group">
+                 <span className="text-2xl group-hover:-translate-y-1 transition-transform">❌ / ❌</span>
+                 <span className="text-[10px] font-normal opacity-80">فرد + عدم تطابق</span>
+             </button>
+             <button onClick={() => handleAnswer(number % 2 === 0, false)} className="bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all rounded-2xl font-bold text-lg shadow-lg border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 flex flex-col items-center justify-center gap-1">
+                 <span>✅ / ❌</span>
+                 <span className="text-[10px] font-normal opacity-80">زوج / غلط</span>
+             </button>
+             <button onClick={() => handleAnswer(number % 2 !== 0, true)} className="bg-amber-600 hover:bg-amber-500 active:scale-95 transition-all rounded-2xl font-bold text-lg shadow-lg border-b-4 border-amber-800 active:border-b-0 active:translate-y-1 flex flex-col items-center justify-center gap-1">
+                 <span>❌ / ✅</span>
+                 <span className="text-[10px] font-normal opacity-80">فرد / درست</span>
+             </button>
+        </div>
+    </div>
+  );
+};
+
+export default MultitaskGame;
