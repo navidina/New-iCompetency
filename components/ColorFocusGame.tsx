@@ -176,14 +176,23 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
 
   const advanceTrack = (shouldCountProgress: boolean) => {
     const shiftStep = shouldCountProgress ? 1 : 0.9;
+
     setSegments((prev) => {
       if (!prev.length) return prev;
       const [, ...rest] = prev;
       const nextId = (prev[prev.length - 1]?.id || prev.length) + 1;
       const newSegment = generateSegment(nextId);
-      return [...rest, newSegment];
+      const newSegments = [...rest, newSegment];
+
+      setTrackShift((prevShift) => {
+        const maxSpan = Math.max(1, newSegments.length - 1);
+        const next = +(prevShift + shiftStep).toFixed(2);
+        return next > maxSpan ? shiftStep : next;
+      });
+
+      return newSegments;
     });
-    setTrackShift((prev) => prev + shiftStep);
+
     setGateTimer(gateWindow);
     setRoundStart(Date.now());
     setProgress((prev) => {
