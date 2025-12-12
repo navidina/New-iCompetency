@@ -1,132 +1,466 @@
-
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>iCompetency | سامانه هوشمند سنجش</title>
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      window.process = { env: { NODE_ENV: 'production' } };
-
-      // Design System Configuration
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Vazirmatn', 'sans-serif'],
-              mono: ['Vazirmatn', 'monospace'],
-            },
-            colors: {
-              primary: {
-                50: '#eef2ff',
-                100: '#e0e7ff',
-                200: '#c7d2fe',
-                300: '#a5b4fc',
-                400: '#818cf8',
-                500: '#6366f1', // Indigo 500
-                600: '#4f46e5', // Indigo 600 - Main Brand Color
-                700: '#4338ca',
-                800: '#3730a3',
-                900: '#312e81',
-              },
-              slate: {
-                850: '#1e293b', // Custom dark shade
-                950: '#020617',
-              }
-            },
-            borderRadius: {
-              '4xl': '2.5rem',
-              '5xl': '3rem',
-            },
-            boxShadow: {
-              'soft': '0 10px 40px -10px rgba(0,0,0,0.08)',
-              'glow': '0 0 20px rgba(79, 70, 229, 0.3)',
-              'inner-light': 'inset 0 2px 4px 0 rgba(255, 255, 255, 0.3)',
-            }
-          },
-        },
-      }
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>مسیر تمرکز رنگی</title>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <style>
-      :root {
-        --bg-color: #f8fafc;
-        --card-bg: #ffffff;
-      }
-      
-      .dark {
-        --bg-color: #0f172a;
-        --card-bg: #1e293b;
-      }
-
+      * { box-sizing: border-box; }
       body {
-        background-color: var(--bg-color);
-        color: #334155;
+        margin: 0;
         font-family: 'Vazirmatn', sans-serif;
+        background: radial-gradient(circle at 50% 20%, #4338ca 0%, #111827 40%, #0b1021 100%);
+        color: #e2e8f0;
         overflow: hidden;
-        -webkit-font-smoothing: antialiased;
-        transition: background-color 0.3s ease;
       }
-
-      /* Custom Scrollbar Normalized */
-      ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+      canvas { display: block; }
+      .hud {
+        position: fixed;
+        top: 16px;
+        inset-inline: 16px;
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+        pointer-events: none;
+        z-index: 5;
       }
-      ::-webkit-scrollbar-track {
-        background: transparent;
+      .pill {
+        background: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(99, 102, 241, 0.35);
+        padding: 10px 14px;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+        font-weight: 700;
+        color: #cbd5e1;
+        min-width: 120px;
       }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 99px;
+      .buttons {
+        position: fixed;
+        bottom: 28px;
+        inset-inline: 16px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        z-index: 6;
       }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
+      button.color-btn {
+        padding: 14px 18px;
+        border-radius: 16px;
+        border: none;
+        font-size: 18px;
+        font-weight: 800;
+        color: #0b1021;
+        background: #c084fc;
+        cursor: pointer;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+        transition: transform 0.1s ease, box-shadow 0.2s ease;
       }
-      .dark ::-webkit-scrollbar-thumb {
-        background: #475569;
+      button.color-btn:active {
+        transform: translateY(2px) scale(0.99);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
       }
-      .dark ::-webkit-scrollbar-thumb:hover {
-        background: #64748b;
+      .overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(145deg, rgba(17, 24, 39, 0.82), rgba(55, 48, 163, 0.75));
+        backdrop-filter: blur(14px);
+        color: #e2e8f0;
+        z-index: 10;
       }
-
-      /* Consistent Animations */
-      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-      @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-      
-      .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-      .animate-fade-in-up { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-      .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-      /* Print Styles */
-      @media print {
-        @page { size: A4; margin: 0; }
-        body { background: white !important; color: black !important; overflow: visible !important; }
-        body > *:not(.print-container-wrapper) { display: none !important; }
-        .print-container-wrapper { display: block !important; }
+      .card {
+        width: min(520px, 90vw);
+        background: rgba(15, 23, 42, 0.9);
+        border: 1px solid rgba(99, 102, 241, 0.45);
+        box-shadow: 0 20px 80px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+        border-radius: 22px;
+        padding: 24px;
       }
+      .card h1 { margin: 0 0 10px 0; font-size: 26px; }
+      .card p { line-height: 1.7; margin: 8px 0; color: #cbd5e1; }
+      .card .badge {
+        display: inline-block;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(99, 102, 241, 0.18);
+        border: 1px solid rgba(99, 102, 241, 0.45);
+        color: #e0e7ff;
+        font-weight: 700;
+      }
+      .card button {
+        margin-top: 18px;
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(120deg, #8b5cf6, #6366f1);
+        color: #f8fafc;
+        border: none;
+        border-radius: 14px;
+        font-weight: 800;
+        font-size: 16px;
+        cursor: pointer;
+        box-shadow: 0 18px 40px rgba(79, 70, 229, 0.45);
+      }
+      .status-banner {
+        position: fixed;
+        top: 62px;
+        right: 16px;
+        padding: 10px 14px;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 12px;
+        z-index: 6;
+        font-weight: 700;
+        color: #cbd5e1;
+        min-width: 180px;
+      }
+      .status-banner strong { color: #a5b4fc; }
     </style>
-    <script type="importmap">
-    {
-      "imports": {
-        "react": "https://aistudiocdn.com/react@^19.2.0",
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-        "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "vite": "https://aistudiocdn.com/vite@^7.2.4",
-        "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
-      }
-    }
-    </script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <div class="hud">
+      <div class="pill">امتیاز: <span id="score">0</span></div>
+      <div class="pill" style="text-align: left">سرعت: <span id="speed">1.0x</span></div>
+    </div>
+    <div class="status-banner">روی رنگ <strong>جوهر</strong> تمرکز کن!</div>
+    <div class="buttons">
+      <button class="color-btn" id="optionA">-</button>
+      <button class="color-btn" id="optionB">-</button>
+    </div>
+
+    <div class="overlay" id="startOverlay">
+      <div class="card">
+        <div class="badge">بازی سنجش تمرکز — اثر استروپ</div>
+        <h1>مسیر تمرکز رنگی</h1>
+        <p>ماشین بنفش به‌صورت خودکار حرکت می‌کند. در هر دروازه یک کلمه رنگی می‌بینی که رنگ جوهرش با معنای کلمه فرق دارد. دکمه‌ای را بزن که با <strong>رنگ جوهر</strong> تطابق دارد تا دروازه باز شود.</p>
+        <p>اشتباه مساوی است با تصادف. هرچه امتیاز بالاتر رود، سرعت بیشتر می‌شود!</p>
+        <button id="startBtn">شروع</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="gameOverOverlay" style="display: none">
+      <div class="card">
+        <div class="badge">پایان بازی</div>
+        <h1>ماشین متوقف شد!</h1>
+        <p>امتیاز شما: <strong id="finalScore">0</strong></p>
+        <p>روی رنگ جوهر تمرکز کن و دوباره امتحان کن.</p>
+        <button id="restartBtn">شروع مجدد</button>
+      </div>
+    </div>
+
+    <script type="module">
+      import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+      const colors = [
+        { key: 'RED', fa: 'قرمز', hex: '#ef4444' },
+        { key: 'BLUE', fa: 'آبی', hex: '#3b82f6' },
+        { key: 'GREEN', fa: 'سبز', hex: '#22c55e' },
+        { key: 'YELLOW', fa: 'زرد', hex: '#eab308' },
+        { key: 'PURPLE', fa: 'بنفش', hex: '#a855f7' },
+      ];
+
+      let scene, camera, renderer, car, road, clock;
+      let gates = [];
+      let speed = 18;
+      let score = 0;
+      let gameRunning = false;
+      let spawnTimer = 0;
+      const spawnInterval = 2.3;
+      const carZ = -8;
+      let gateId = 0;
+      let activeGateId = null;
+
+      const scoreEl = document.getElementById('score');
+      const speedEl = document.getElementById('speed');
+      const optionA = document.getElementById('optionA');
+      const optionB = document.getElementById('optionB');
+      const startOverlay = document.getElementById('startOverlay');
+      const gameOverOverlay = document.getElementById('gameOverOverlay');
+      const finalScore = document.getElementById('finalScore');
+
+      function initScene() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color('#0b1021');
+
+        camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
+        camera.position.set(0, 7.5, 14);
+        camera.lookAt(0, 1.5, 0);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
+        document.body.appendChild(renderer.domElement);
+
+        const ambient = new THREE.AmbientLight('#c7d2fe', 0.85);
+        scene.add(ambient);
+        const dir = new THREE.DirectionalLight('#ffffff', 0.9);
+        dir.position.set(-4, 10, 6);
+        scene.add(dir);
+
+        const fogColor = new THREE.Color('#0f172a');
+        scene.fog = new THREE.Fog(fogColor, 25, 120);
+
+        createRoad();
+        createCar();
+
+        clock = new THREE.Clock();
+        window.addEventListener('resize', onWindowResize);
+      }
+
+      function createRoadTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 1024;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#111827';
+        ctx.fillRect(60, 0, canvas.width - 120, canvas.height);
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 6;
+        for (let y = 0; y < canvas.height; y += 80) {
+          ctx.beginPath();
+          ctx.moveTo(canvas.width / 2, y);
+          ctx.lineTo(canvas.width / 2, y + 40);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = 'rgba(99,102,241,0.35)';
+        ctx.lineWidth = 8;
+        ctx.strokeRect(65, 0, canvas.width - 130, canvas.height);
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      function createRoad() {
+        const tex = createRoadTexture();
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(1, 20);
+        road = new THREE.Mesh(new THREE.PlaneGeometry(14, 400), new THREE.MeshStandardMaterial({ map: tex }));
+        road.rotation.x = -Math.PI / 2;
+        road.position.z = -40;
+        scene.add(road);
+      }
+
+      function createCar() {
+        car = new THREE.Group();
+        const bodyMat = new THREE.MeshStandardMaterial({ color: '#7c3aed', metalness: 0.2, roughness: 0.4 });
+        const cabinMat = new THREE.MeshStandardMaterial({ color: '#a78bfa', metalness: 0.1, roughness: 0.25, transparent: true, opacity: 0.95 });
+        const body = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.9, 3.6), bodyMat);
+        body.position.y = 0.6;
+        const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.6, 1.6), cabinMat);
+        cabin.position.set(0, 1.1, -0.2);
+        const wheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.6, 16);
+        wheelGeo.rotateZ(Math.PI / 2);
+        const wheelMat = new THREE.MeshStandardMaterial({ color: '#0f172a' });
+        const wheelOffsets = [
+          [-0.9, 0.35, 1.2],
+          [0.9, 0.35, 1.2],
+          [-0.9, 0.35, -1.2],
+          [0.9, 0.35, -1.2],
+        ];
+        wheelOffsets.forEach(([x, y, z]) => {
+          const w = new THREE.Mesh(wheelGeo, wheelMat);
+          w.position.set(x, y, z);
+          car.add(w);
+        });
+        const spoiler = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.12, 0.6), bodyMat);
+        spoiler.position.set(0, 1.15, 2.1);
+        car.add(body, cabin, spoiler);
+        car.position.set(0, 0, carZ);
+        scene.add(car);
+      }
+
+      function createGate() {
+        const gate = new THREE.Group();
+        const postMat = new THREE.MeshStandardMaterial({ color: '#1f2937', metalness: 0.1, roughness: 0.6 });
+        const accentMat = new THREE.MeshStandardMaterial({ color: '#6366f1', emissive: '#4338ca', emissiveIntensity: 0.35 });
+        const postGeo = new THREE.BoxGeometry(0.5, 4.5, 0.5);
+        const leftPost = new THREE.Mesh(postGeo, postMat);
+        const rightPost = new THREE.Mesh(postGeo, postMat);
+        leftPost.position.set(-2.6, 2.2, 0);
+        rightPost.position.set(2.6, 2.2, 0);
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(6, 0.35, 0.6), postMat);
+        beam.position.set(0, 4.3, 0);
+        const glow = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.1, 0.6), accentMat);
+        glow.position.set(0, 4.55, 0);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 48px Vazirmatn, sans-serif';
+
+        const word = colors[Math.floor(Math.random() * colors.length)];
+        let ink = colors[Math.floor(Math.random() * colors.length)];
+        while (ink.key === word.key) {
+          ink = colors[Math.floor(Math.random() * colors.length)];
+        }
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = ink.hex;
+        ctx.fillText(word.key, canvas.width / 2, canvas.height / 2);
+        const textTex = new THREE.CanvasTexture(canvas);
+        const textMat = new THREE.MeshBasicMaterial({ map: textTex, transparent: true });
+        const textPlane = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 2.2), textMat);
+        textPlane.position.set(0, 3.2, 0.01);
+
+        const blocker = new THREE.Mesh(new THREE.BoxGeometry(6.2, 2, 0.6), new THREE.MeshStandardMaterial({ color: '#0f172a', metalness: 0.2, roughness: 0.5 }));
+        blocker.position.set(0, 1.1, 0);
+
+        gate.add(leftPost, rightPost, beam, glow, blocker, textPlane);
+        gate.position.set(0, 0, 90);
+        scene.add(gate);
+
+        const wrongOption = colors.filter((c) => c.key !== ink.key)[Math.floor(Math.random() * (colors.length - 1))];
+        const opts = Math.random() > 0.5 ? [ink, wrongOption] : [wrongOption, ink];
+
+        return {
+          id: gateId++,
+          group: gate,
+          blocker,
+          textPlane,
+          ink,
+          word,
+          options: opts,
+          opened: false,
+          opening: false,
+          answered: false,
+          scored: false,
+        };
+      }
+
+      function updateButtons() {
+        const gate = gates.find((g) => g.group.position.z > carZ - 5);
+        if (!gate) return;
+        if (gate.id === activeGateId) return;
+        activeGateId = gate.id;
+        const [first, second] = gate.options;
+        optionA.textContent = first.fa;
+        optionA.style.background = first.hex;
+        optionA.dataset.key = first.key;
+        optionB.textContent = second.fa;
+        optionB.style.background = second.hex;
+        optionB.dataset.key = second.key;
+      }
+
+      function handleChoice(key) {
+        if (!gameRunning) return;
+        const gate = gates.find((g) => g.group.position.z > carZ - 5);
+        if (!gate || gate.answered) return;
+        gate.answered = true;
+        if (key === gate.ink.key) {
+          gate.opening = true;
+          gate.blocker.material.color.set('#22c55e');
+          gate.textPlane.material.opacity = 0.95;
+        } else {
+          triggerGameOver();
+        }
+      }
+
+      function spawnGate() {
+        const gate = createGate();
+        gate.group.position.z = 140;
+        gates.push(gate);
+        updateButtons();
+      }
+
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      function resetGame() {
+        gates.forEach((g) => scene.remove(g.group));
+        gates = [];
+        score = 0;
+        speed = 18;
+        activeGateId = null;
+        gateId = 0;
+        spawnTimer = 0;
+        scoreEl.textContent = '0';
+        speedEl.textContent = '1.0x';
+        car.position.x = 0;
+      }
+
+      function startGame() {
+        resetGame();
+        gameRunning = true;
+        startOverlay.style.display = 'none';
+        gameOverOverlay.style.display = 'none';
+        spawnGate();
+        clock.start();
+        animate();
+      }
+
+      function triggerGameOver() {
+        gameRunning = false;
+        finalScore.textContent = score.toString();
+        gameOverOverlay.style.display = 'flex';
+      }
+
+      function updateSpeed() {
+        const factor = 1 + score * 0.02;
+        speed = 18 * factor;
+        speedEl.textContent = `${factor.toFixed(2)}x`;
+      }
+
+      function animate() {
+        const delta = clock.getDelta();
+        if (gameRunning) {
+          road.material.map.offset.y -= delta * speed * 0.04;
+
+          spawnTimer -= delta;
+          if (spawnTimer <= 0) {
+            spawnGate();
+            spawnTimer = Math.max(1.4, spawnInterval - score * 0.01);
+          }
+
+          gates.forEach((gate) => {
+            gate.group.position.z -= delta * speed;
+            if (gate.opening && gate.blocker.position.y < 6) {
+              gate.blocker.position.y += delta * 6;
+              if (gate.blocker.position.y >= 6) gate.opened = true;
+            }
+            if (!gate.opened && gate.group.position.z <= carZ + 1.2) {
+              triggerGameOver();
+            }
+            if (!gate.scored && gate.group.position.z < carZ - 4) {
+              gate.scored = true;
+              if (gate.opening || gate.opened) {
+                score += 10;
+                scoreEl.textContent = score.toString();
+                updateSpeed();
+              }
+            }
+          });
+
+          updateButtons();
+
+          gates = gates.filter((g) => {
+            if (g.group.position.z < -160) {
+              scene.remove(g.group);
+              return false;
+            }
+            return true;
+          });
+        }
+
+        renderer.render(scene, camera);
+        if (gameRunning) requestAnimationFrame(animate);
+      }
+
+      optionA.addEventListener('click', () => handleChoice(optionA.dataset.key));
+      optionB.addEventListener('click', () => handleChoice(optionB.dataset.key));
+      document.getElementById('startBtn').addEventListener('click', startGame);
+      document.getElementById('restartBtn').addEventListener('click', startGame);
+
+      initScene();
+    </script>
   </body>
 </html>
