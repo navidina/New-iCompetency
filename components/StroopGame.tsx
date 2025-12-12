@@ -29,10 +29,13 @@ const StroopGame: React.FC<Props> = ({ onExit, onComplete }) => {
   const [finished, setFinished] = useState(false);
   const [currentRound, setCurrentRound] = useState<{ text: string; colorHex: string; colorName: string }>({ text: '', colorHex: '', colorName: '' });
   const [flash, setFlash] = useState<'correct' | 'wrong' | null>(null);
-  
+
   // Stats
   const [attempts, setAttempts] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
+  const [combo, setCombo] = useState(0);
+  const [bestCombo, setBestCombo] = useState(0);
+  const [roundStart, setRoundStart] = useState<number | null>(null);
 
   useEffect(() => {
     if (started && !finished && timeLeft > 0) {
@@ -67,6 +70,7 @@ const StroopGame: React.FC<Props> = ({ onExit, onComplete }) => {
       colorHex: COLORS[colorIndex].hex,
       colorName: COLORS[colorIndex].name
     });
+    setRoundStart(Date.now());
   };
 
   const handleStart = () => {
@@ -78,25 +82,34 @@ const StroopGame: React.FC<Props> = ({ onExit, onComplete }) => {
   const handleAnswer = (selectedColorName: string) => {
     setAttempts(prev => prev + 1);
     const isCorrect = selectedColorName === currentRound.colorName;
-    
+    const reactionTime = roundStart ? Date.now() - roundStart : null;
+
     if (isCorrect) {
-      // Score weighted by difficulty
-      setScore(s => s + (1 * difficulty));
       setCorrectCount(prev => prev + 1);
       setFlash('correct');
-      
-      // CAT: Increase difficulty
+
+      const basePoints = 10 + difficulty * 2;
+      const speedBonus = reactionTime ? Math.max(0, Math.floor((2000 - reactionTime) / 200)) : 0;
+      const comboBonus = Math.min(15, combo * 2);
+
+      setCombo(prev => {
+        const nextCombo = prev + 1;
+        setBestCombo(prevBest => Math.max(prevBest, nextCombo));
+        return nextCombo;
+      });
+
+      setScore(s => s + basePoints + speedBonus + comboBonus);
+
+      // CAT: Increase difficulty for streaks
       setDifficulty(d => Math.min(10, d + 1));
 
-      // Bonus time for correct answer? Small amount.
-      // setTimeLeft(t => Math.min(GAME_DURATION, t + 0.5));
-      
       if (navigator.vibrate) navigator.vibrate(50);
     } else {
-      // Penalty
-      setScore(s => Math.max(0, s - difficulty)); // Higher penalty at higher levels
+      // Penalty scales with current difficulty, but softer than before
+      setScore(s => Math.max(0, s - Math.max(5, difficulty * 2)));
       setFlash('wrong');
-      
+      setCombo(0);
+
       // CAT: Decrease difficulty
       setDifficulty(d => Math.max(1, d - 1));
 
@@ -128,8 +141,11 @@ const StroopGame: React.FC<Props> = ({ onExit, onComplete }) => {
   }
 
   if (finished) {
-      const normalizedScore = Math.min(100, Math.round(score / 2)); // Normalize roughly based on max possible attempts
       const accuracy = attempts > 0 ? Math.round((correctCount / attempts) * 100) : 0;
+      const normalizedScore = Math.min(
+        100,
+        Math.round(score * 0.6) + Math.round(accuracy * 0.4) + Math.min(20, bestCombo * 2)
+      );
       const rating = getRating(normalizedScore);
 
       return (
@@ -141,8 +157,8 @@ const StroopGame: React.FC<Props> = ({ onExit, onComplete }) => {
                   <h2 className="text-2xl font-black text-slate-800 mb-1">تحلیل تمرکز (CAT)</h2>
                   <div className="text-cyan-600 font-bold mb-6">{rating}</div>
                   
-                  <div className="text-5xl font-black text-slate-800 mb-2">{toPersianNum(score)}</div>
-                  <div className="text-xs font-bold text-slate-400 mb-8">امتیاز خام</div>
+                  <div className="text-5xl font-black text-slate-800 mb-2">{toPersianNum(normalizedScore)}</div>
+                  <div className="text-xs font-bold text-slate-400 mb-8">امتیاز نهایی</div>
 
                   {/* Stats */}
                   <div className="grid grid-cols-2 gap-4 mb-8">
@@ -155,6 +171,11 @@ const StroopGame: React.FC<Props> = ({ onExit, onComplete }) => {
                           <TrendingUp className="mx-auto text-orange-500 mb-1" size={20} />
                           <div className="font-black text-2xl text-slate-800">{toPersianNum(difficulty)}</div>
                           <div className="text-[10px] font-bold text-slate-400">سطح نهایی</div>
+                      </div>
+                      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm col-span-2">
+                          <Eye className="mx-auto text-cyan-500 mb-1" size={20} />
+                          <div className="font-black text-2xl text-slate-800">{toPersianNum(bestCombo)}</div>
+                          <div className="text-[10px] font-bold text-slate-400">بیشترین زنجیره پاسخ سریع</div>
                       </div>
                   </div>
                   
@@ -170,6 +191,7 @@ const StroopGame: React.FC<Props> = ({ onExit, onComplete }) => {
   }
 
   const progressPercent = (timeLeft / GAME_DURATION) * 100;
+  const liveAccuracy = attempts > 0 ? Math.round((correctCount / attempts) * 100) : 0;
 
   return (
     <div className={`h-full flex flex-col items-center justify-center p-4 relative overflow-hidden transition-colors duration-150 ${flash === 'correct' ? 'bg-emerald-100' : flash === 'wrong' ? 'bg-red-100' : 'bg-white'}`}>
@@ -202,13 +224,23 @@ const StroopGame: React.FC<Props> = ({ onExit, onComplete }) => {
 
       <div className="flex-1 flex flex-col items-center justify-center w-full">
         <div className="relative mb-12 transform hover:scale-105 transition-transform duration-300">
-            <h1 
+            <h1
                 className="text-7xl md:text-9xl font-black tracking-wider cursor-default select-none drop-shadow-2xl font-sans"
                 style={{ color: currentRound.colorHex, textShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
             >
                 {currentRound.text}
             </h1>
             <p className="text-center text-slate-300 font-bold mt-6 text-sm uppercase tracking-[0.2em] bg-slate-100 inline-block px-4 py-1 rounded-full mx-auto">رنگ را بخوانید</p>
+            <div className="mt-4 flex flex-col md:flex-row gap-3 items-center justify-center">
+              <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-xl border border-emerald-100 shadow-sm">
+                <CheckCircle2 size={18} />
+                <span className="text-sm font-bold">{toPersianNum(liveAccuracy)}٪ دقت زنده</span>
+              </div>
+              <div className="flex items-center gap-2 bg-orange-50 text-orange-700 px-4 py-2 rounded-xl border border-orange-100 shadow-sm">
+                <TrendingUp size={18} />
+                <span className="text-sm font-bold">{combo > 0 ? `${toPersianNum(combo)}× کومبو فعال` : 'کومبو بساز تا امتیاز بگیری'}</span>
+              </div>
+            </div>
         </div>
       </div>
 
