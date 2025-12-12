@@ -4,6 +4,7 @@ import { CorsiConfig } from '../../../types';
 import { Play, RotateCcw, CheckCircle, Server } from 'lucide-react';
 import { toPersianNum } from '../../../utils/formatting';
 import GameShell from '../../../../components/GameShell';
+import { sfx } from '../../../../services/audioService';
 
 const DEFAULT_CONFIG: CorsiConfig = {
   gridSize: 4,
@@ -130,14 +131,14 @@ const CorsiBlockGame: React.FC<CorsiBlockGameProps> = ({ onFinish }) => {
               <span className="text-xl font-bold text-slate-800">پایان بازی</span>
               <div className="flex gap-2">
                   <button
-                    onClick={startGame}
+                    onClick={() => { sfx.playClick(); startGame(); }}
                     className="flex items-center gap-2 px-6 py-2 bg-slate-800 text-white rounded-full hover:bg-slate-900 transition-colors"
                   >
                     <RotateCcw className="w-4 h-4" />
                     تلاش مجدد
                   </button>
                   <button
-                    onClick={handleFinish}
+                    onClick={() => { sfx.playClick(); handleFinish(); }}
                     className="flex items-center gap-2 px-6 py-2 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 transition-colors"
                   >
                     <CheckCircle className="w-4 h-4" />
