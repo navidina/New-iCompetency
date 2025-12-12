@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Pause, Play, RotateCcw, HelpCircle, Timer, Heart } from 'lucide-react';
 import { toPersianNum } from '../utils';
+import { sfx } from '../services/audioService';
 
 export interface GameStats {
   score: number;
@@ -51,7 +52,28 @@ const GameShell: React.FC<GameShellProps> = ({
   const theme = colorMap[colorTheme];
 
   const handleStart = () => {
+    sfx.playClick();
     setGameState('playing');
+  };
+
+  const handlePause = () => {
+    sfx.playClick();
+    setGameState('paused');
+  };
+
+  const handleResume = () => {
+    sfx.playClick();
+    setGameState('playing');
+  };
+
+  const handleRestart = () => {
+    sfx.playClick();
+    onRestart?.();
+  };
+
+  const handleExit = () => {
+    sfx.playClick();
+    onExit();
   };
 
   return (
@@ -62,7 +84,7 @@ const GameShell: React.FC<GameShellProps> = ({
         <div className="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200 p-3 md:p-4 flex justify-between items-center relative z-30">
             <div className="flex items-center gap-3">
                 <button
-                    onClick={() => setGameState('paused')}
+                    onClick={handlePause}
                     className="p-2.5 hover:bg-slate-100 rounded-xl transition-colors text-slate-500 hover:text-slate-800"
                     aria-label="توقف بازی"
                     title="توقف بازی"
@@ -145,15 +167,15 @@ const GameShell: React.FC<GameShellProps> = ({
                     </ul>
                 </div>
 
-                <button 
+                <button
                     onClick={handleStart}
                     className={`w-full py-4 rounded-2xl font-black text-lg text-white shadow-xl hover:shadow-2xl hover:-translate-y-1 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 ${theme.primary} ${theme.hover}`}
                 >
                     <Play fill="currentColor" size={24} />
                     شروع چالش
                 </button>
-                
-                <button onClick={onExit} className="mt-6 text-slate-400 hover:text-slate-600 font-bold text-xs transition-colors">
+
+                <button onClick={handleExit} className="mt-6 text-slate-400 hover:text-slate-600 font-bold text-xs transition-colors">
                     بازگشت به منو
                 </button>
             </div>
@@ -166,15 +188,15 @@ const GameShell: React.FC<GameShellProps> = ({
              <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center animate-scale-in">
                  <h2 className="text-2xl font-black text-slate-900 mb-8">بازی متوقف شد</h2>
                  <div className="space-y-3">
-                     <button onClick={() => setGameState('playing')} className={`w-full py-3.5 rounded-2xl font-bold text-white ${theme.primary} flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform`}>
+                     <button onClick={handleResume} className={`w-full py-3.5 rounded-2xl font-bold text-white ${theme.primary} flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform`}>
                          <Play size={20} fill="currentColor" /> ادامه بازی
                      </button>
                      {onRestart && (
-                         <button onClick={onRestart} className="w-full py-3.5 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center justify-center gap-2 transition-colors">
+                         <button onClick={handleRestart} className="w-full py-3.5 rounded-2xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 flex items-center justify-center gap-2 transition-colors">
                              <RotateCcw size={20} /> شروع مجدد
                          </button>
                      )}
-                     <button onClick={onExit} className="w-full py-3.5 rounded-2xl font-bold text-red-500 hover:bg-red-50 flex items-center justify-center gap-2 transition-colors border border-transparent hover:border-red-100">
+                     <button onClick={handleExit} className="w-full py-3.5 rounded-2xl font-bold text-red-500 hover:bg-red-50 flex items-center justify-center gap-2 transition-colors border border-transparent hover:border-red-100">
                          <X size={20} /> خروج
                      </button>
                  </div>

@@ -4,6 +4,7 @@ import GameShell from '../../../../components/GameShell';
 import { toPersianNum } from '../../../utils';
 import { ScoreExplanation, toTScoreWithExplanation } from '../../../utils/scoring';
 import { ScoreExplanationCard } from '../../common/ScoreExplanationCard';
+import { sfx } from '../../../../services/audioService';
 
 const generateMatrix = (level: number) => {
   const grid = [];
@@ -82,18 +83,21 @@ export const NumberMatrixGame: React.FC<{ onComplete: (score: number) => void }>
 
   const handleAnswer = (val: number) => {
     if (val === question.correct) {
+      sfx.playSuccess();
       const nextLevel = level + 1;
       setScore(s => s + 10 + (timeLeft > 30000 ? 5 : 0) + (level * 2));
       setLevel(nextLevel);
       setQuestion(generateMatrix(nextLevel));
       setTimeLeft(60000);
     } else {
+      sfx.playError();
       handleGameOver();
     }
   };
 
   const handleGameOver = () => {
     setGameOver(true);
+    if (score > 0) sfx.playWin();
     const result = toTScoreWithExplanation(score, 50, 15, 'Pattern Score');
     setExplanation(result.explanation);
   };

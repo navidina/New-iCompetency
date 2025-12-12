@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { LayoutGrid, Clock, Split, Zap, TrendingUp } from 'lucide-react';
 import GameIntro from './GameIntro';
 import { toPersianNum } from '../utils';
+import { sfx } from '../services/audioService';
 
 interface Props {
   onExit: () => void;
@@ -76,6 +77,7 @@ const MultitaskGame: React.FC<Props> = ({ onExit, onComplete }) => {
                            (colorText === 'سبز' && colorHex === '#22c55e');
       
       if (isEven === correctEven && isMatch === correctMatch) {
+          sfx.playSuccess();
           setScore(s => s + (10 * difficulty));
           setCorrectCount(prev => prev + 1);
           setFeedback('correct');
@@ -84,6 +86,7 @@ const MultitaskGame: React.FC<Props> = ({ onExit, onComplete }) => {
 
           if (navigator.vibrate) navigator.vibrate(50);
       } else {
+          sfx.playError();
           setScore(s => Math.max(0, s - (5 * difficulty)));
           setFeedback('wrong');
           
@@ -103,22 +106,23 @@ const MultitaskGame: React.FC<Props> = ({ onExit, onComplete }) => {
 
   if (showIntro) {
     return (
-      <GameIntro 
+      <GameIntro
         title="انجام همزمان امور (A15)"
         description="سیستم تست انطباقی (CAT): در سطوح بالاتر، اعداد پیچیده‌تر و زمان تصمیم‌گیری حیاتی‌تر می‌شود."
         icon={<LayoutGrid />}
         gradientFrom="from-purple-500"
         gradientTo="to-fuchsia-600"
         accentColor="text-purple-600"
-        onStart={() => setShowIntro(false)}
+        onStart={() => { sfx.playClick(); setShowIntro(false); }}
       />
     );
   }
 
   if (finished) {
       const accuracy = attempts > 0 ? Math.round((correctCount / attempts) * 100) : 0;
-      const normalizedScore = Math.min(100, Math.round(score / 30)); 
+      const normalizedScore = Math.min(100, Math.round(score / 30));
       const rating = getRating(normalizedScore);
+      if (normalizedScore > 0) sfx.playWin();
 
       return (
         <div className="h-full flex items-center justify-center bg-purple-50 p-4 animate-fade-in-up">

@@ -5,6 +5,7 @@ import { Calculator, Check, Delete, RotateCcw, X } from 'lucide-react';
 import { toPersianNum } from '../../../utils/formatting';
 import { toTScoreWithExplanation } from '../../../utils/scoring';
 import { ScoreExplanationCard } from '../../common/ScoreExplanationCard';
+import { sfx } from '../../../../services/audioService';
 
 interface MathGameProps {
   onFinish: (score: number, details?: any) => void;
@@ -30,6 +31,7 @@ const MathGame: React.FC<MathGameProps> = ({ onFinish }) => {
   // Sync Start
   useEffect(() => {
     if (shellState === 'playing' && gameState === 'IDLE') {
+      sfx.playClick();
       startGame();
     }
   }, [shellState, gameState, startGame]);
@@ -38,6 +40,9 @@ const MathGame: React.FC<MathGameProps> = ({ onFinish }) => {
   useEffect(() => {
     if (gameState === 'GAMEOVER') {
         // We don't automatically close the shell, we show game over UI inside.
+        if (score > 0) {
+          sfx.playWin();
+        }
     }
   }, [gameState]);
 
@@ -48,19 +53,30 @@ const MathGame: React.FC<MathGameProps> = ({ onFinish }) => {
   const handleNumpadClick = (num: string) => {
     if (gameState !== 'PLAYING') return;
     if (userInput.length < 8) {
+      sfx.playClick();
       handleInput(userInput + num);
     }
   };
 
   const handleBackspace = () => {
      if (gameState !== 'PLAYING') return;
+     sfx.playClick();
      handleInput(userInput.slice(0, -1));
   };
 
   const handleClear = () => {
       if (gameState !== 'PLAYING') return;
+      sfx.playClick();
       handleInput('');
   }
+
+  useEffect(() => {
+    if (feedback === 'correct') {
+      sfx.playSuccess();
+    } else if (feedback === 'wrong') {
+      sfx.playError();
+    }
+  }, [feedback]);
 
   // Keyboard support
   useEffect(() => {

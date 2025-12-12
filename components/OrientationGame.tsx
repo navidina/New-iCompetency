@@ -4,6 +4,7 @@ import { Compass, Navigation, RotateCw, Target, Move, LocateFixed, Zap } from 'l
 import GameIntro from './GameIntro';
 import GameShell from './GameShell'; // Ensure GameShell is imported if you use it or reuse the wrapper logic
 import { toPersianNum } from '../utils';
+import { sfx } from '../services/audioService';
 
 interface Props {
   onExit: () => void;
@@ -58,9 +59,11 @@ const OrientationGame: React.FC<Props> = ({ onExit, onComplete }) => {
   const finishGame = () => {
       setIsPlaying(false);
       setIsFinished(true);
+      if (score > 0) sfx.playWin();
   };
 
   const startGame = () => {
+      sfx.playClick();
       setShowIntro(false);
       setIsPlaying(true);
       generateRound();
@@ -146,6 +149,7 @@ const OrientationGame: React.FC<Props> = ({ onExit, onComplete }) => {
       }
 
       if (isCorrect) {
+          sfx.playSuccess();
           // Scoring
           const basePoints = 50;
           const diffBonus = difficulty * 10;
@@ -158,6 +162,7 @@ const OrientationGame: React.FC<Props> = ({ onExit, onComplete }) => {
           setFeedback('correct');
           if (navigator.vibrate) navigator.vibrate(50);
       } else {
+          sfx.playError();
           // Penalty
           setCombo(1);
           setWrongCount(w => w + 1);

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Brain, CheckCircle2, TrendingUp, Eye } from 'lucide-react';
 import GameShell from './GameShell';
 import { toPersianNum } from '../utils';
+import { sfx } from '../services/audioService';
 
 interface Props {
   onExit: () => void;
@@ -81,6 +82,7 @@ const StroopGame: React.FC<Props> = ({ onExit, onComplete }) => {
   };
 
   const resetGame = () => {
+    sfx.playClick();
     setScore(0);
     setDifficulty(1);
     setTimeLeft(GAME_DURATION);
@@ -104,6 +106,7 @@ const StroopGame: React.FC<Props> = ({ onExit, onComplete }) => {
     const reactionTime = roundStart ? Date.now() - roundStart : null;
 
     if (isCorrect) {
+      sfx.playSuccess();
       setCorrectCount(prev => prev + 1);
       setFlash('correct');
 
@@ -124,6 +127,7 @@ const StroopGame: React.FC<Props> = ({ onExit, onComplete }) => {
 
       if (navigator.vibrate) navigator.vibrate(50);
     } else {
+      sfx.playError();
       // Penalty scales with current difficulty, but softer than before
       setScore(s => Math.max(0, s - Math.max(5, difficulty * 2)));
       setFlash('wrong');
@@ -138,6 +142,22 @@ const StroopGame: React.FC<Props> = ({ onExit, onComplete }) => {
     setTimeout(() => setFlash(null), 200);
     generateRound();
   };
+
+  useEffect(() => {
+    if (finished) {
+      const accuracy = attempts > 0 ? Math.round((correctCount / attempts) * 100) : 0;
+      const normalizedScore = Math.min(
+        100,
+        Math.round(score * 0.6) + Math.round(accuracy * 0.4) + Math.min(20, bestCombo * 2)
+      );
+
+      if (normalizedScore >= 50) {
+        sfx.playWin();
+      } else {
+        sfx.playSuccess();
+      }
+    }
+  }, [finished, attempts, correctCount, score, bestCombo]);
 
   const getRating = (finalScore: number) => {
       if (finalScore >= 80) return "ذهن لیزری";
