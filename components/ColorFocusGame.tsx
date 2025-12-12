@@ -113,21 +113,49 @@ const makeCar = () => {
 const makeRoad = () => {
   const road = new THREE.Group();
   const baseGeo = new THREE.PlaneGeometry(20, 200, 1, 10);
-  const baseMat = new THREE.MeshStandardMaterial({ color: '#0b1224', side: THREE.DoubleSide });
+  const baseMat = new THREE.MeshStandardMaterial({ color: '#0b1224', side: THREE.DoubleSide, roughness: 0.85 });
   const base = new THREE.Mesh(baseGeo, baseMat);
   base.rotation.x = -Math.PI / 2;
   base.position.z = -50;
 
-  const stripeGeo = new THREE.BoxGeometry(0.3, 0.02, 3);
-  const stripeMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1' });
-  for (let i = 0; i < 20; i += 1) {
+  const glowGeo = new THREE.PlaneGeometry(24, 200);
+  const glowMat = new THREE.MeshBasicMaterial({ color: '#5b21b6', transparent: true, opacity: 0.12, side: THREE.DoubleSide });
+  const glow = new THREE.Mesh(glowGeo, glowMat);
+  glow.rotation.x = -Math.PI / 2;
+  glow.position.z = -50;
+  glow.position.y = -0.01;
+
+  const stripeGeo = new THREE.BoxGeometry(0.32, 0.02, 3);
+  const stripeMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', emissive: '#94a3b8', emissiveIntensity: 0.3 });
+  const stripes = new THREE.Group();
+  stripes.name = 'road-stripes';
+  for (let i = 0; i < 18; i += 1) {
     const stripe = new THREE.Mesh(stripeGeo, stripeMat);
     stripe.position.set(0, 0.02, -i * 8);
-    road.add(stripe);
+    stripe.castShadow = false;
+    stripe.receiveShadow = true;
+    stripes.add(stripe);
   }
 
-  road.add(base);
+  const sideRailGeo = new THREE.BoxGeometry(0.2, 0.16, 200);
+  const sideRailMat = new THREE.MeshStandardMaterial({ color: '#1f2937', emissive: '#a855f7', emissiveIntensity: 0.25 });
+  const leftRail = new THREE.Mesh(sideRailGeo, sideRailMat);
+  const rightRail = leftRail.clone();
+  leftRail.position.set(-5.4, 0.1, -50);
+  rightRail.position.set(5.4, 0.1, -50);
+  road.add(leftRail, rightRail);
+
+  road.add(stripes, glow, base);
   return road;
+};
+
+const makeHeadlights = () => {
+  const coneGeo = new THREE.ConeGeometry(3.4, 8, 24, 1, true);
+  const coneMat = new THREE.MeshBasicMaterial({ color: '#f8fafc', transparent: true, opacity: 0.18 });
+  const cone = new THREE.Mesh(coneGeo, coneMat);
+  cone.rotation.x = -Math.PI / 2.4;
+  cone.position.set(0, 0.3, 3.6);
+  return cone;
 };
 
 const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
@@ -236,11 +264,11 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     const width = mountRef.current?.clientWidth || window.innerWidth;
     const height = mountRef.current?.clientHeight || window.innerHeight;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#0b1224');
-    scene.fog = new THREE.Fog('#0b1224', 20, 120);
+    scene.background = new THREE.Color('#050915');
+    scene.fog = new THREE.Fog('#050915', 18, 110);
 
     const camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 200);
-    camera.position.set(0, 12, 18);
+    camera.position.set(10, 12, 20);
     camera.lookAt(0, 2, -40);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -248,12 +276,22 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     renderer.setSize(width, height);
     renderer.shadowMap.enabled = true;
 
-    const ambient = new THREE.AmbientLight('#cbd5e1', 0.8);
-    const dirLight = new THREE.DirectionalLight('#ffffff', 0.85);
-    dirLight.position.set(6, 14, 12);
+    const ambient = new THREE.AmbientLight('#cbd5e1', 0.92);
+    const dirLight = new THREE.DirectionalLight('#ffffff', 0.9);
+    dirLight.position.set(8, 16, 14);
     dirLight.castShadow = true;
 
-    scene.add(ambient, dirLight);
+    const rimLight = new THREE.SpotLight('#7c3aed', 1.2, 80, Math.PI / 5, 0.4, 1.4);
+    rimLight.position.set(-6, 12, 6);
+    rimLight.target.position.set(0, 0, -40);
+    scene.add(rimLight.target);
+
+    const headLight = new THREE.SpotLight('#f8fafc', 1.6, 32, Math.PI / 6, 0.5, 1.8);
+    headLight.position.set(0, 4, 10);
+    headLight.target.position.set(0, 0, -10);
+    scene.add(headLight.target);
+
+    scene.add(ambient, dirLight, rimLight, headLight);
 
     const road = makeRoad();
     scene.add(road);
@@ -262,8 +300,20 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     const car = makeCar();
     car.position.set(0, 0, 6);
     car.castShadow = true;
+    const lightCone = makeHeadlights();
+    car.add(lightCone);
     scene.add(car);
     carRef.current = car;
+
+    const particles = new THREE.Group();
+    for (let i = 0; i < 32; i += 1) {
+      const sparkGeo = new THREE.SphereGeometry(0.08, 8, 8);
+      const sparkMat = new THREE.MeshBasicMaterial({ color: '#c084fc', transparent: true, opacity: 0.7 });
+      const spark = new THREE.Mesh(sparkGeo, sparkMat);
+      spark.position.set((Math.random() - 0.5) * 10, 0.5 + Math.random() * 4, -Math.random() * 80);
+      particles.add(spark);
+    }
+    scene.add(particles);
 
     if (mountRef.current) {
       mountRef.current.innerHTML = '';
@@ -342,11 +392,20 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     }
 
     if (roadRef.current) {
-      roadRef.current.children.forEach((child) => {
+      const stripeGroup = roadRef.current.getObjectByName('road-stripes');
+      stripeGroup?.children.forEach((child) => {
         child.position.z += speedRef.current * delta;
         if (child.position.z > 10) child.position.z = -140;
       });
     }
+
+    sceneRef.current?.traverse((obj) => {
+      if (obj.type === 'Mesh' && obj.geometry.type === 'SphereGeometry') {
+        obj.position.z += speedRef.current * delta * 0.6;
+        obj.position.y += Math.sin(clockRef.current.elapsedTime * 2 + obj.position.x) * 0.001;
+        if (obj.position.z > 8) obj.position.z = -90 - Math.random() * 40;
+      }
+    });
 
     rendererRef.current?.render(sceneRef.current as THREE.Scene, cameraRef.current as THREE.Camera);
     animationRef.current = requestAnimationFrame(animate);
@@ -480,50 +539,62 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     >
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
         <div className="lg:col-span-3 relative rounded-[28px] overflow-hidden bg-gradient-to-b from-slate-900 via-slate-950 to-black border border-slate-800 shadow-2xl">
-          <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-purple-500/20 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(168,85,247,0.08),transparent_45%)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-purple-500/20 via-transparent to-transparent" />
+          <div className="absolute top-4 left-4 flex items-center gap-3 text-xs text-white/80">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/10 border border-white/10 backdrop-blur">
+              <Car size={14} /> سرعت ذهنی: <span className="font-black text-white">{toPersianNum(currentSpeed)}</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/10 border border-white/10 backdrop-blur">
+              <Sparkles size={14} className="text-amber-300" /> گیت‌های رد شده: {toPersianNum(cleared)}
+            </div>
+          </div>
           <div ref={mountRef} className="relative w-full h-[500px] lg:h-[600px]" />
-          <div className="absolute left-0 right-0 bottom-0 p-4 flex items-center justify-between text-xs text-white/80">
-            <div className="flex items-center gap-2">
-              <Car size={16} /> سرعت ذهنی: <span className="font-black text-white">{toPersianNum(currentSpeed)} کیلومتر</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-amber-300" /> گیت‌های رد شده: {toPersianNum(cleared)}
-            </div>
+          <div className="absolute left-0 right-0 bottom-0 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-white/90 gap-2">
             <div className="flex items-center gap-2">
               <Play size={16} className="text-emerald-300" /> {message}
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/10 border border-white/10 backdrop-blur">
+              <Trophy size={14} className="text-amber-300" /> امتیاز: {toPersianNum(score)}
             </div>
           </div>
           {overlays}
         </div>
 
-        <div className="bg-white rounded-[24px] border border-slate-100 shadow-xl p-4 space-y-4">
-          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-2xl p-4">
+        <div className="bg-white rounded-[24px] border border-slate-100 shadow-xl p-4 space-y-4 relative overflow-hidden">
+          <div className="absolute inset-x-6 top-2 h-32 bg-gradient-to-br from-purple-100 via-white to-indigo-50 rounded-full blur-3xl opacity-60" />
+          <div className="relative bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-2xl p-4">
             <div className="flex items-center gap-2 text-purple-600 font-black text-sm">
               <Palette size={18} /> چالش رنگ جوهر
             </div>
             <p className="text-slate-600 text-xs mt-2 leading-relaxed">
               روی مانع کلمه‌ای می‌بینی که با رنگ دیگری نوشته شده است. دکمه‌ای را بزن که با رنگ جوهر متن همخوانی دارد.
             </p>
+            <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-500">
+              <span className="px-2 py-1 rounded-full bg-white border border-slate-200">بازی ایزومتریک</span>
+              <span className="px-2 py-1 rounded-full bg-white border border-slate-200">اثر استروپ</span>
+              <span className="px-2 py-1 rounded-full bg-white border border-slate-200">پاسخ سریع</span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 relative">
             {choices.map((c) => (
               <button
                 key={c.key}
                 onClick={() => handleChoice(c.key)}
-                className="relative overflow-hidden rounded-2xl p-4 text-white font-black shadow-lg hover:-translate-y-1 transition-transform"
+                className="relative overflow-hidden rounded-2xl p-4 text-white font-black shadow-lg hover:-translate-y-1 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white"
                 style={{ backgroundImage: `linear-gradient(135deg, ${c.ink}, ${c.ink}dd)` }}
               >
-                <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.35),transparent_45%)]" />
+                <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.35),transparent_45%)]" />
                 <div className="relative flex items-center justify-between">
-                  <span className="text-lg">{c.label}</span>
-                  <span className="w-8 h-8 rounded-xl bg-white/25 border border-white/40" />
+                  <span className="text-lg drop-shadow-sm">{c.label}</span>
+                  <span className="w-9 h-9 rounded-xl bg-white/25 border border-white/40 shadow-inner" />
                 </div>
               </button>
             ))}
           </div>
 
-          <div className="rounded-2xl border border-slate-100 p-4 bg-slate-50 flex items-center justify-between">
+          <div className="relative rounded-2xl border border-slate-100 p-4 bg-slate-50/90 flex items-center justify-between gap-3">
             <div className="flex flex-col">
               <span className="text-[11px] text-slate-500 font-bold">مسافت ذهنی</span>
               <span className="text-xl font-black text-slate-900">{toPersianNum(distance)}</span>
