@@ -3,6 +3,7 @@ import { ScoreExplanation, toTScoreWithExplanation } from '../../../utils/scorin
 import { ScoreExplanationCard } from '../../common/ScoreExplanationCard';
 import { toPersianNum } from '../../../utils';
 import { ArrowRight, Circle, Square, Triangle, Hexagon, Star } from 'lucide-react';
+import { sfx } from '../../../../services/audioService';
 
 const SHAPES = ['circle', 'square', 'triangle', 'hexagon', 'star'];
 const COLORS = ['text-red-500', 'text-blue-500', 'text-green-500', 'text-yellow-500', 'text-purple-500'];
@@ -92,18 +93,21 @@ export const VisualAnalogyGame: React.FC<{ onComplete: (score: number) => void }
 
     const handleAnswer = (opt: any) => {
         if (opt.type === question.correct.type && opt.color === question.correct.color) {
+            sfx.playSuccess();
             const nextLevel = level + 1;
             setScore(s => s + 20 + (level * 2));
             setLevel(nextLevel);
             setQuestion(generateAnalogy(nextLevel));
             if (nextLevel > 15) handleGameOver();
         } else {
+            sfx.playError();
             handleGameOver();
         }
     };
 
     const handleGameOver = () => {
         setGameOver(true);
+        if (score > 0) sfx.playWin();
         const result = toTScoreWithExplanation(score, 50, 10, 'Analogy Score');
         setExplanation(result.explanation);
     };

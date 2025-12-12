@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Check, X, Scan, RotateCw, HelpCircle, BrainCircuit } from 'lucide-react';
 import GameShell from './GameShell';
 import { toPersianNum } from '../utils';
+import { sfx } from '../services/audioService';
 
 interface Props {
   onExit: () => void;
@@ -155,9 +156,11 @@ const VisualizationGame: React.FC<Props> = ({ onExit, onComplete }) => {
       setIsCorrect(correct);
 
       if (correct) {
+          sfx.playSuccess();
           setScore(s => s + (10 * difficulty));
           setDifficulty(d => Math.min(10, d + 1));
       } else {
+          sfx.playError();
           setDifficulty(d => Math.max(1, d - 1));
       }
       
@@ -172,6 +175,7 @@ const VisualizationGame: React.FC<Props> = ({ onExit, onComplete }) => {
 
   if (gameState === 'finished') {
       const normalizedScore = Math.min(100, Math.round(score / 5));
+      if (normalizedScore > 0) sfx.playWin();
       return (
         <div className="h-full flex items-center justify-center bg-indigo-50 p-4 animate-fade-in-up">
              <div className="bg-white p-8 rounded-[2rem] shadow-2xl text-center max-w-md w-full border border-indigo-100">

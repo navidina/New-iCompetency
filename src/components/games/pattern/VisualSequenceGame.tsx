@@ -4,6 +4,7 @@ import { toPersianNum } from '../../../utils';
 import { ScoreExplanation, toTScoreWithExplanation } from '../../../utils/scoring';
 import { ScoreExplanationCard } from '../../common/ScoreExplanationCard';
 import { Star, Square, Circle, Triangle, Hexagon } from 'lucide-react';
+import { sfx } from '../../../../services/audioService';
 
 // Shapes mapping
 const SHAPES: Record<string, React.ElementType> = {
@@ -96,18 +97,21 @@ export const VisualSequenceGame: React.FC<{ onComplete: (score: number) => void 
 
   const handleAnswer = (opt: any) => {
     if (opt.shape === question.correct.shape && opt.color === question.correct.color) {
+      sfx.playSuccess();
       const nextLevel = level + 1;
       setScore(s => s + 15 + (level * 2)); // Bonus for higher levels
       setLevel(nextLevel);
       setQuestion(generateSequence(nextLevel));
       if (nextLevel > 15) handleGameOver(); // Cap at level 15
     } else {
+      sfx.playError();
       handleGameOver();
     }
   };
 
   const handleGameOver = () => {
     setGameOver(true);
+    if (score > 0) sfx.playWin();
     const result = toTScoreWithExplanation(score, 100, 30, 'Sequence Score');
     setExplanation(result.explanation);
   };
