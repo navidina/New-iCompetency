@@ -1,8 +1,21 @@
 
 import React, { useState } from 'react';
 import { AppView, UserProfile } from '../types';
-import { 
-  Layers, Calculator, Zap, Box, Compass, Eye, LayoutGrid, BrainCircuit, Lock, CheckCircle2, Play, Grid, Search
+import {
+  Layers,
+  Calculator,
+  Zap,
+  Box,
+  Compass,
+  Eye,
+  LayoutGrid,
+  BrainCircuit,
+  Lock,
+  CheckCircle2,
+  Play,
+  Grid,
+  Search,
+  Palette
 } from 'lucide-react';
 import { toPersianNum } from '../utils';
 
@@ -43,6 +56,10 @@ const MiniGameHub: React.FC<Props> = ({ onSelectGame, user }) => {
     [AppView.MINIGAME_STROOP]: {
       summary: "امتیاز تمرکز از اختلاف واکنش در محرک‌های سازگار و ناسازگار و دقت کلی به دست می‌آید.",
       factors: ["زمان واکنش کمتر در حالت ناسازگار", "دقت بالای رنگ‌خوانی", "کاهش False Alarm"],
+    },
+    [AppView.MINIGAME_FOCUS_TRACK]: {
+      summary: "امتیاز مسیر رنگی از عبور پشت‌سرهم از موانع، حفظ جان‌ها و کمبوی انتخاب رنگ تشکیل می‌شود.",
+      factors: ["پیشرفت مسیر و رسیدن به خط پایان", "دقت در انتخاب رنگ درست بر اساس قانون مرحله", "کمبوهای متوالی و زمان واکنش سریع"],
     },
     [AppView.MINIGAME_MULTITASK]: {
       summary: "امتیاز پردازش موازی نسبت کارایی تک‌وظیفه‌ای به چندوظیفه‌ای و دقت هر دو را می‌سنجد.",
@@ -149,6 +166,18 @@ const MiniGameHub: React.FC<Props> = ({ onSelectGame, user }) => {
       gradient: "from-red-100 to-rose-50 dark:from-red-900/40 dark:to-rose-900/20",
       accent: "text-red-600 dark:text-red-400",
       bar: "bg-red-500",
+      progress: user.skills.focus || 0
+    },
+    {
+      id: AppView.MINIGAME_FOCUS_TRACK,
+      nodeId: '',
+      code: "A14+",
+      title: "مسیر تمرکز رنگی",
+      description: "مسیر رانندگی با انتخاب رنگ درست برای گذر از موانع متغیر.",
+      icon: <Palette className="w-8 h-8 text-purple-600 dark:text-purple-400" />,
+      gradient: "from-purple-100 to-indigo-50 dark:from-purple-900/40 dark:to-indigo-900/20",
+      accent: "text-purple-600 dark:text-purple-400",
+      bar: "bg-purple-500",
       progress: user.skills.focus || 0
     },
     {
