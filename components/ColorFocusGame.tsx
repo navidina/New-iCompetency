@@ -26,6 +26,7 @@ type GateInstance = {
   opened: boolean;
   opening: boolean;
   resolved: boolean;
+  choiceOrder?: ColorSwatch[];
 };
 
 const COLORS: ColorSwatch[] = [
@@ -38,7 +39,7 @@ const COLORS: ColorSwatch[] = [
 
 const laneWidth = 4.8;
 const baseSpeed = 14;
-const maxSpeed = 28;
+const maxSpeed = 42;
 
 const createLabelTexture = (word: string, color: string) => {
   const canvas = document.createElement('canvas');
@@ -87,12 +88,24 @@ const makeGate = (word: ColorSwatch, ink: ColorSwatch) => {
 const makeCar = () => {
   const car = new THREE.Group();
   const bodyGeo = new THREE.BoxGeometry(2.4, 1.2, 4);
-  const bodyMat = new THREE.MeshStandardMaterial({ color: '#7c3aed', metalness: 0.5, roughness: 0.4 });
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: '#7c3aed',
+    metalness: 0.55,
+    roughness: 0.38,
+    emissive: '#6d28d9',
+    emissiveIntensity: 0.18,
+  });
   const body = new THREE.Mesh(bodyGeo, bodyMat);
   body.position.y = 0.9;
 
   const cabinGeo = new THREE.BoxGeometry(1.8, 0.9, 2.2);
-  const cabinMat = new THREE.MeshStandardMaterial({ color: '#a855f7', metalness: 0.6, roughness: 0.35 });
+  const cabinMat = new THREE.MeshStandardMaterial({
+    color: '#a855f7',
+    metalness: 0.62,
+    roughness: 0.32,
+    emissive: '#a78bfa',
+    emissiveIntensity: 0.24,
+  });
   const cabin = new THREE.Mesh(cabinGeo, cabinMat);
   cabin.position.set(0, 1.5, -0.3);
 
@@ -107,29 +120,32 @@ const makeCar = () => {
 
   car.add(body, cabin);
   car.add(makeWheel(-1, -1.3), makeWheel(1, -1.3), makeWheel(-1, 1.3), makeWheel(1, 1.3));
+
+  car.userData.bodyMat = bodyMat;
+  car.userData.cabinMat = cabinMat;
   return car;
 };
 
 const makeRoad = () => {
   const road = new THREE.Group();
-  const baseGeo = new THREE.PlaneGeometry(20, 200, 1, 10);
+  const baseGeo = new THREE.PlaneGeometry(22, 360, 1, 18);
   const baseMat = new THREE.MeshStandardMaterial({ color: '#0b1224', side: THREE.DoubleSide, roughness: 0.85 });
   const base = new THREE.Mesh(baseGeo, baseMat);
   base.rotation.x = -Math.PI / 2;
-  base.position.z = -50;
+  base.position.z = -120;
 
-  const glowGeo = new THREE.PlaneGeometry(24, 200);
+  const glowGeo = new THREE.PlaneGeometry(26, 360);
   const glowMat = new THREE.MeshBasicMaterial({ color: '#5b21b6', transparent: true, opacity: 0.12, side: THREE.DoubleSide });
   const glow = new THREE.Mesh(glowGeo, glowMat);
   glow.rotation.x = -Math.PI / 2;
-  glow.position.z = -50;
+  glow.position.z = -120;
   glow.position.y = -0.01;
 
   const stripeGeo = new THREE.BoxGeometry(0.32, 0.02, 3);
   const stripeMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', emissive: '#94a3b8', emissiveIntensity: 0.3 });
   const stripes = new THREE.Group();
   stripes.name = 'road-stripes';
-  for (let i = 0; i < 18; i += 1) {
+  for (let i = 0; i < 40; i += 1) {
     const stripe = new THREE.Mesh(stripeGeo, stripeMat);
     stripe.position.set(0, 0.02, -i * 8);
     stripe.castShadow = false;
@@ -137,12 +153,12 @@ const makeRoad = () => {
     stripes.add(stripe);
   }
 
-  const sideRailGeo = new THREE.BoxGeometry(0.2, 0.16, 200);
+  const sideRailGeo = new THREE.BoxGeometry(0.2, 0.16, 360);
   const sideRailMat = new THREE.MeshStandardMaterial({ color: '#1f2937', emissive: '#a855f7', emissiveIntensity: 0.25 });
   const leftRail = new THREE.Mesh(sideRailGeo, sideRailMat);
   const rightRail = leftRail.clone();
-  leftRail.position.set(-5.4, 0.1, -50);
-  rightRail.position.set(5.4, 0.1, -50);
+  leftRail.position.set(-5.4, 0.1, -120);
+  rightRail.position.set(5.4, 0.1, -120);
   road.add(leftRail, rightRail);
 
   road.add(stripes, glow, base);
@@ -170,10 +186,11 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
   const animationRef = useRef<number>();
   const speedRef = useRef(baseSpeed);
   const lastSpawnRef = useRef(-40);
+  const clearedRef = useRef(0);
 
   const [gameState, setGameState] = useState<RunnerState>('intro');
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(1);
+  const [lives, setLives] = useState(3);
   const [activeGate, setActiveGate] = useState<GateInstance | null>(null);
   const [choices, setChoices] = useState<ColorSwatch[]>([]);
   const [distance, setDistance] = useState(0);
@@ -194,10 +211,13 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       setChoices([]);
       return;
     }
-    const distractor = pickColor([front.ink.key]);
-    const shuffled = [front.ink, distractor].sort(() => Math.random() - 0.5);
+    if (!front.choiceOrder || front.choiceOrder.length !== 2) {
+      const distractor = pickColor([front.ink.key]);
+      const inkLeft = Math.random() > 0.5;
+      front.choiceOrder = inkLeft ? [front.ink, distractor] : [distractor, front.ink];
+    }
     setActiveGate(front);
-    setChoices(shuffled);
+    setChoices(front.choiceOrder);
     setMessage('رنگ جوهر نوشته را انتخاب کن تا مانع بالا برود.');
   };
 
@@ -208,7 +228,8 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       ink = pickColor([word.key]);
     }
     const gateMesh = makeGate(word, ink);
-    gateMesh.position.set(0, 0, lastSpawnRef.current - 18 - Math.random() * 6);
+    const spacing = Math.max(11, 22 - speedRef.current * 0.45 - clearedRef.current * 0.35);
+    gateMesh.position.set(0, 0, lastSpawnRef.current - spacing - Math.random() * 3);
     gateMesh.scale.setScalar(1.05);
     gateMesh.castShadow = true;
 
@@ -222,6 +243,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       opened: false,
       opening: false,
       resolved: false,
+      choiceOrder: undefined,
     });
     lastSpawnRef.current = gateMesh.position.z;
     syncActiveGate();
@@ -248,10 +270,11 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     speedRef.current = baseSpeed;
     lastSpawnRef.current = -40;
     setScore(0);
-    setLives(1);
+    setLives(3);
     setDistance(0);
     setCleared(0);
-    setMessage('با زدن رنگ جوهر، گیت را باز کن. اشتباه = تصادف');
+    clearedRef.current = 0;
+    setMessage('با زدن رنگ جوهر، گیت را باز کن. سه جان داری، حواست را جمع کن!');
     gateQueueRef.current.forEach((g) => sceneRef.current?.remove(g.mesh));
     gateQueueRef.current.length = 0;
     spawnGate();
@@ -268,8 +291,8 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     scene.fog = new THREE.Fog('#050915', 18, 110);
 
     const camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 200);
-    camera.position.set(10, 12, 20);
-    camera.lookAt(0, 2, -40);
+    camera.position.set(8, 12, 22);
+    camera.lookAt(0, 2, -10);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -291,7 +314,13 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     headLight.target.position.set(0, 0, -10);
     scene.add(headLight.target);
 
-    scene.add(ambient, dirLight, rimLight, headLight);
+    const carFill = new THREE.PointLight('#c4b5fd', 1.4, 26, 2.4);
+    carFill.position.set(0, 3.5, 6);
+
+    const dashGlow = new THREE.PointLight('#a855f7', 0.8, 16, 2.2);
+    dashGlow.position.set(0, 2.2, 4);
+
+    scene.add(ambient, dirLight, rimLight, headLight, carFill, dashGlow);
 
     const road = makeRoad();
     scene.add(road);
@@ -342,13 +371,54 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     setGameState('finished');
   };
 
+  const loseLife = (reason: string, gateToClear?: GateInstance) => {
+    sfx.playError();
+    setLives((prev) => {
+      const next = Math.max(prev - 1, 0);
+      if (next <= 0) {
+        setMessage(`${reason} جانت تمام شد.`);
+        setGameState('finished');
+      } else {
+        setMessage(`${reason} یک جان از دست رفت. (${toPersianNum(next)}/۳ باقی مانده)`);
+        const target = gateToClear ?? gateQueueRef.current.find((g) => !g.resolved);
+        if (target) {
+          target.resolved = true;
+          sceneRef.current?.remove(target.mesh);
+          gateQueueRef.current = gateQueueRef.current.filter((g) => g.id !== target.id);
+          syncActiveGate();
+        }
+      }
+      return next;
+    });
+  };
+
+  const repaintCar = (color: string) => {
+    const bodyMat = carRef.current?.userData.bodyMat as THREE.MeshStandardMaterial | undefined;
+    const cabinMat = carRef.current?.userData.cabinMat as THREE.MeshStandardMaterial | undefined;
+    if (bodyMat) {
+      bodyMat.color = new THREE.Color(color);
+      bodyMat.emissive = new THREE.Color(color).multiplyScalar(0.4);
+      bodyMat.needsUpdate = true;
+    }
+    if (cabinMat) {
+      cabinMat.color = new THREE.Color(color);
+      cabinMat.emissive = new THREE.Color(color).multiplyScalar(0.35);
+      cabinMat.needsUpdate = true;
+    }
+  };
+
   const liftGate = (gate: GateInstance) => {
     gate.opening = true;
     gate.resolved = true;
     sfx.playSuccess();
     setScore((prev) => prev + 15 + Math.round(speedRef.current));
-    setCleared((prev) => prev + 1);
+    setCleared((prev) => {
+      const next = prev + 1;
+      clearedRef.current = next;
+      return next;
+    });
     speedRef.current = Math.min(maxSpeed, speedRef.current + 0.8);
+    repaintCar(gate.ink.ink);
     syncActiveGate();
   };
 
@@ -359,13 +429,16 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     if (key === target.ink.key) {
       liftGate(target);
     } else {
-      crash('انتخاب نادرست! خودرو به مانع خورد.');
+      loseLife('انتخاب نادرست! خودرو به مانع خورد.', target);
     }
   };
 
   const animate = () => {
     if (gameState !== 'playing') return;
     const delta = clockRef.current.getDelta();
+
+    const accel = 0.35 + clearedRef.current * 0.03;
+    speedRef.current = Math.min(maxSpeed, speedRef.current + accel * delta);
 
     setDistance((prev) => prev + Math.round(speedRef.current * delta));
 
@@ -378,7 +451,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
         gate.mesh.position.y = THREE.MathUtils.lerp(gate.mesh.position.y, 7, 0.06);
       }
       if (!gate.resolved && gate.mesh.position.z > 5) {
-        crash('دیر واکنش دادی! خودرو متوقف شد.');
+        loseLife('دیر واکنش دادی! خودرو به مانع خورد.', gate);
       }
       if (gate.mesh.position.z > 16) {
         sceneRef.current?.remove(gate.mesh);
@@ -387,7 +460,10 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       }
     });
 
-    if (gateQueueRef.current.length < 4 || (gateQueueRef.current.at(-1)?.mesh.position.z ?? 0) > lastSpawnRef.current + 18) {
+    if (
+      gateQueueRef.current.length < 4 ||
+      (gateQueueRef.current.at(-1)?.mesh.position.z ?? 0) > lastSpawnRef.current + Math.max(12, 20 - clearedRef.current * 0.3)
+    ) {
       spawnGate();
     }
 
@@ -395,12 +471,18 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       const stripeGroup = roadRef.current.getObjectByName('road-stripes');
       stripeGroup?.children.forEach((child) => {
         child.position.z += speedRef.current * delta;
-        if (child.position.z > 10) child.position.z = -140;
+        if (child.position.z > 14) child.position.z = -300;
       });
     }
 
+    if (cameraRef.current && carRef.current) {
+      const desired = new THREE.Vector3(8, 11.5, 20);
+      cameraRef.current.position.lerp(desired, 0.05);
+      cameraRef.current.lookAt(new THREE.Vector3(0, 1.6, -8));
+    }
+
     sceneRef.current?.traverse((obj) => {
-      if (obj.type === 'Mesh' && obj.geometry.type === 'SphereGeometry') {
+      if (obj instanceof THREE.Mesh && obj.geometry instanceof THREE.SphereGeometry) {
         obj.position.z += speedRef.current * delta * 0.6;
         obj.position.y += Math.sin(clockRef.current.elapsedTime * 2 + obj.position.x) * 0.001;
         if (obj.position.z > 8) obj.position.z = -90 - Math.random() * 40;
@@ -430,16 +512,29 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       }
       clockRef.current.start();
       animationRef.current = requestAnimationFrame(animate);
-    } else if (gameState === 'paused') {
+    } else {
       clockRef.current.stop();
-    } else if (gameState === 'intro') {
-      resetGame();
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+      animationRef.current = undefined;
+      if (gameState === 'intro') {
+        resetGame();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState]);
 
   useEffect(() => {
-    return () => cancelAnimationFrame(animationRef.current || 0);
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      clockRef.current.stop();
+      try {
+        sfx.suspend?.();
+      } catch (e) {
+        // no-op
+      }
+    };
   }, []);
 
   const finishCard = (
@@ -449,7 +544,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       </div>
       <h3 className="text-2xl font-black text-slate-900">پایان ران! تمرکزت چطور بود؟</h3>
       <p className="text-slate-500 text-sm max-w-lg">
-        هرچه سریع‌تر رنگ جوهر را پیدا کنی، سرعت بالا می‌رود. با انتخاب اشتباه، خودرو می‌ایستد. دوباره امتحان کن و کمبو بساز.
+        هرچه سریع‌تر رنگ جوهر را پیدا کنی، سرعت بالا می‌رود. با هر اشتباه یک جان از دست می‌دهی و با از دست دادن همه جان‌ها خودرو می‌ایستد. دوباره امتحان کن و کمبو بساز.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl">
         <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm text-right">
@@ -472,16 +567,16 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
         >
           ثبت و خروج
         </button>
-        <button
-          onClick={() => {
-            resetGame();
-            setGameState('playing');
-            setLives(1);
-          }}
-          className="w-full bg-white text-slate-700 border border-slate-200 py-3 rounded-2xl font-bold text-lg hover:bg-slate-50"
-        >
-          تلاش دوباره
-        </button>
+            <button
+              onClick={() => {
+                resetGame();
+                setGameState('playing');
+                setLives(3);
+              }}
+              className="w-full bg-white text-slate-700 border border-slate-200 py-3 rounded-2xl font-bold text-lg hover:bg-slate-50"
+            >
+              تلاش دوباره
+            </button>
       </div>
     </div>
   );
@@ -496,7 +591,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
             </div>
             <h2 className="text-2xl font-black text-slate-900">رانر سنجش تمرکز رنگی</h2>
             <p className="text-slate-500 text-sm">
-              خودرو خودکار می‌تازد. کلمه روی مانع را ببین و رنگ جوهر را انتخاب کن. اگر اشتباه بزنی، خودرو متوقف می‌شود.
+              خودرو خودکار می‌تازد. کلمه روی مانع را ببین و رنگ جوهر را انتخاب کن. سه جان داری؛ با هر اشتباه یک جان از دست می‌دهی.
             </p>
             <button
               onClick={() => setGameState('playing')}
@@ -523,11 +618,11 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       description="یک رانر ایزومتریک بر پایه اثر استروپ: رنگ جوهر نوشته را بزن تا گیت باز شود."
       instructions={[
         'رنگ جوهر نوشته روی مانع را انتخاب کن، نه معنای کلمه را.',
-        'اگر دیر واکنش دهی یا اشتباه بزنی، خودرو متوقف می‌شود.',
+        'اگر دیر واکنش دهی یا اشتباه بزنی، یک جان از دست می‌دهی؛ سه جان داری.',
         'هر گیت درست، سرعت را بالا می‌برد و امتیاز بیشتری می‌دهد.',
       ]}
       icon={<Palette />}
-      stats={{ score, timeLeft: undefined, level: Math.max(1, Math.round(speedRef.current / 5)), combo: cleared, lives, maxLives: 1 }}
+      stats={{ score, timeLeft: undefined, level: Math.max(1, Math.round(speedRef.current / 5)), combo: cleared, lives, maxLives: 3 }}
       onExit={onExit}
       onRestart={() => {
         resetGame();

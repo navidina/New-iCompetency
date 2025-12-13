@@ -27,6 +27,16 @@ class AudioService {
     return this.isMuted;
   }
 
+  public suspend() {
+    if (this.ctx && this.ctx.state !== 'closed') {
+      try {
+        this.ctx.suspend();
+      } catch (e) {
+        // no-op
+      }
+    }
+  }
+
   public get muted() { return this.isMuted; }
 
   // --- Professional UI Sounds (Subtle & Clean) ---
