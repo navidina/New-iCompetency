@@ -39,7 +39,7 @@ const COLORS: ColorSwatch[] = [
 
 const laneWidth = 4.8;
 const baseSpeed = 14;
-const maxSpeed = 28;
+const maxSpeed = 42;
 
 const createLabelTexture = (word: string, color: string) => {
   const canvas = document.createElement('canvas');
@@ -186,6 +186,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
   const animationRef = useRef<number>();
   const speedRef = useRef(baseSpeed);
   const lastSpawnRef = useRef(-40);
+  const clearedRef = useRef(0);
 
   const [gameState, setGameState] = useState<RunnerState>('intro');
   const [score, setScore] = useState(0);
@@ -227,7 +228,8 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       ink = pickColor([word.key]);
     }
     const gateMesh = makeGate(word, ink);
-    gateMesh.position.set(0, 0, lastSpawnRef.current - 18 - Math.random() * 6);
+    const spacing = Math.max(11, 22 - speedRef.current * 0.45 - clearedRef.current * 0.35);
+    gateMesh.position.set(0, 0, lastSpawnRef.current - spacing - Math.random() * 3);
     gateMesh.scale.setScalar(1.05);
     gateMesh.castShadow = true;
 
@@ -271,6 +273,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     setLives(3);
     setDistance(0);
     setCleared(0);
+    clearedRef.current = 0;
     setMessage('با زدن رنگ جوهر، گیت را باز کن. سه جان داری، حواست را جمع کن!');
     gateQueueRef.current.forEach((g) => sceneRef.current?.remove(g.mesh));
     gateQueueRef.current.length = 0;
@@ -409,7 +412,11 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     gate.resolved = true;
     sfx.playSuccess();
     setScore((prev) => prev + 15 + Math.round(speedRef.current));
-    setCleared((prev) => prev + 1);
+    setCleared((prev) => {
+      const next = prev + 1;
+      clearedRef.current = next;
+      return next;
+    });
     speedRef.current = Math.min(maxSpeed, speedRef.current + 0.8);
     repaintCar(gate.ink.ink);
     syncActiveGate();
@@ -429,6 +436,9 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
   const animate = () => {
     if (gameState !== 'playing') return;
     const delta = clockRef.current.getDelta();
+
+    const accel = 0.35 + clearedRef.current * 0.03;
+    speedRef.current = Math.min(maxSpeed, speedRef.current + accel * delta);
 
     setDistance((prev) => prev + Math.round(speedRef.current * delta));
 
@@ -450,7 +460,10 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       }
     });
 
-    if (gateQueueRef.current.length < 4 || (gateQueueRef.current.at(-1)?.mesh.position.z ?? 0) > lastSpawnRef.current + 18) {
+    if (
+      gateQueueRef.current.length < 4 ||
+      (gateQueueRef.current.at(-1)?.mesh.position.z ?? 0) > lastSpawnRef.current + Math.max(12, 20 - clearedRef.current * 0.3)
+    ) {
       spawnGate();
     }
 
