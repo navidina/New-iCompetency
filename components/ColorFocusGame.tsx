@@ -119,29 +119,32 @@ const makeCar = () => {
 
   car.add(body, cabin);
   car.add(makeWheel(-1, -1.3), makeWheel(1, -1.3), makeWheel(-1, 1.3), makeWheel(1, 1.3));
+
+  car.userData.bodyMat = bodyMat;
+  car.userData.cabinMat = cabinMat;
   return car;
 };
 
 const makeRoad = () => {
   const road = new THREE.Group();
-  const baseGeo = new THREE.PlaneGeometry(20, 200, 1, 10);
+  const baseGeo = new THREE.PlaneGeometry(22, 360, 1, 18);
   const baseMat = new THREE.MeshStandardMaterial({ color: '#0b1224', side: THREE.DoubleSide, roughness: 0.85 });
   const base = new THREE.Mesh(baseGeo, baseMat);
   base.rotation.x = -Math.PI / 2;
-  base.position.z = -50;
+  base.position.z = -120;
 
-  const glowGeo = new THREE.PlaneGeometry(24, 200);
+  const glowGeo = new THREE.PlaneGeometry(26, 360);
   const glowMat = new THREE.MeshBasicMaterial({ color: '#5b21b6', transparent: true, opacity: 0.12, side: THREE.DoubleSide });
   const glow = new THREE.Mesh(glowGeo, glowMat);
   glow.rotation.x = -Math.PI / 2;
-  glow.position.z = -50;
+  glow.position.z = -120;
   glow.position.y = -0.01;
 
   const stripeGeo = new THREE.BoxGeometry(0.32, 0.02, 3);
   const stripeMat = new THREE.MeshStandardMaterial({ color: '#e2e8f0', emissive: '#94a3b8', emissiveIntensity: 0.3 });
   const stripes = new THREE.Group();
   stripes.name = 'road-stripes';
-  for (let i = 0; i < 18; i += 1) {
+  for (let i = 0; i < 40; i += 1) {
     const stripe = new THREE.Mesh(stripeGeo, stripeMat);
     stripe.position.set(0, 0.02, -i * 8);
     stripe.castShadow = false;
@@ -149,12 +152,12 @@ const makeRoad = () => {
     stripes.add(stripe);
   }
 
-  const sideRailGeo = new THREE.BoxGeometry(0.2, 0.16, 200);
+  const sideRailGeo = new THREE.BoxGeometry(0.2, 0.16, 360);
   const sideRailMat = new THREE.MeshStandardMaterial({ color: '#1f2937', emissive: '#a855f7', emissiveIntensity: 0.25 });
   const leftRail = new THREE.Mesh(sideRailGeo, sideRailMat);
   const rightRail = leftRail.clone();
-  leftRail.position.set(-5.4, 0.1, -50);
-  rightRail.position.set(5.4, 0.1, -50);
+  leftRail.position.set(-5.4, 0.1, -120);
+  rightRail.position.set(5.4, 0.1, -120);
   road.add(leftRail, rightRail);
 
   road.add(stripes, glow, base);
@@ -207,8 +210,8 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       return;
     }
     const distractor = pickColor([front.ink.key]);
-    // Keep button ordering stable to avoid the UI jumping between gates.
-    const orderedChoices = [front.ink, distractor];
+    const inkLeft = Math.random() > 0.5;
+    const orderedChoices = inkLeft ? [front.ink, distractor] : [distractor, front.ink];
     setActiveGate(front);
     setChoices(orderedChoices);
     setMessage('رنگ جوهر نوشته را انتخاب کن تا مانع بالا برود.');
@@ -361,6 +364,29 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     setGameState('finished');
   };
 
+  const repaintCar = (color: string) => {
+    const bodyMat = carRef.current?.userData.bodyMat as THREE.MeshStandardMaterial | undefined;
+    const cabinMat = carRef.current?.userData.cabinMat as THREE.MeshStandardMaterial | undefined;
+    if (bodyMat) {
+      bodyMat.color = new THREE.Color(color);
+      bodyMat.emissive = new THREE.Color(color).multiplyScalar(0.4);
+      bodyMat.needsUpdate = true;
+    }
+    if (cabinMat) {
+      cabinMat.color = new THREE.Color(color);
+      cabinMat.emissive = new THREE.Color(color).multiplyScalar(0.35);
+      cabinMat.needsUpdate = true;
+    }
+    setTimeout(() => {
+      if (bodyMat && cabinMat) {
+        bodyMat.color = new THREE.Color('#7c3aed');
+        bodyMat.emissive = new THREE.Color('#6d28d9');
+        cabinMat.color = new THREE.Color('#a855f7');
+        cabinMat.emissive = new THREE.Color('#a78bfa');
+      }
+    }, 1400);
+  };
+
   const liftGate = (gate: GateInstance) => {
     gate.opening = true;
     gate.resolved = true;
@@ -368,6 +394,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     setScore((prev) => prev + 15 + Math.round(speedRef.current));
     setCleared((prev) => prev + 1);
     speedRef.current = Math.min(maxSpeed, speedRef.current + 0.8);
+    repaintCar(gate.ink.ink);
     syncActiveGate();
   };
 
@@ -414,7 +441,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       const stripeGroup = roadRef.current.getObjectByName('road-stripes');
       stripeGroup?.children.forEach((child) => {
         child.position.z += speedRef.current * delta;
-        if (child.position.z > 10) child.position.z = -140;
+        if (child.position.z > 14) child.position.z = -300;
       });
     }
 
