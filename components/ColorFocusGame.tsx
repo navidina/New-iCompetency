@@ -402,14 +402,6 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       cabinMat.emissive = new THREE.Color(color).multiplyScalar(0.35);
       cabinMat.needsUpdate = true;
     }
-    setTimeout(() => {
-      if (bodyMat && cabinMat) {
-        bodyMat.color = new THREE.Color('#7c3aed');
-        bodyMat.emissive = new THREE.Color('#6d28d9');
-        cabinMat.color = new THREE.Color('#a855f7');
-        cabinMat.emissive = new THREE.Color('#a78bfa');
-      }
-    }, 1400);
   };
 
   const liftGate = (gate: GateInstance) => {
