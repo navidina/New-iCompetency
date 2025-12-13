@@ -537,8 +537,8 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       setGameState={setGameState}
       colorTheme="purple"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
-        <div className="lg:col-span-3 relative rounded-[28px] overflow-hidden bg-gradient-to-b from-slate-900 via-slate-950 to-black border border-slate-800 shadow-2xl">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-full w-full max-w-[1500px] mx-auto lg:min-h-[calc(100vh-150px)]">
+        <div className="lg:col-span-3 relative rounded-[28px] overflow-hidden bg-gradient-to-b from-slate-900 via-slate-950 to-black border border-slate-800 shadow-2xl min-h-[60vh]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(168,85,247,0.08),transparent_45%)]" />
           <div className="absolute inset-0 bg-gradient-to-b from-purple-500/20 via-transparent to-transparent" />
           <div className="absolute top-4 left-4 flex items-center gap-3 text-xs text-white/80">
@@ -549,7 +549,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
               <Sparkles size={14} className="text-amber-300" /> گیت‌های رد شده: {toPersianNum(cleared)}
             </div>
           </div>
-          <div ref={mountRef} className="relative w-full h-[500px] lg:h-[600px]" />
+          <div ref={mountRef} className="relative w-full h-[60vh] lg:h-[72vh] xl:h-[78vh]" />
           <div className="absolute left-0 right-0 bottom-0 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-white/90 gap-2">
             <div className="flex items-center gap-2">
               <Play size={16} className="text-emerald-300" /> {message}
