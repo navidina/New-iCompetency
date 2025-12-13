@@ -146,7 +146,7 @@ const GameShell: React.FC<GameShellProps> = ({
       )}
 
       {/* --- Main Game Area --- */}
-      <div className="flex-1 relative overflow-hidden flex flex-col items-center justify-center p-4">
+      <div className="flex-1 relative overflow-hidden flex flex-col items-stretch justify-start p-4">
          {children}
       </div>
 

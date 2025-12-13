@@ -25,6 +25,7 @@ import StroopGame from './components/StroopGame';          // A14
 import MultitaskGame from './components/MultitaskGame';    // A15
 import PatternGame from './components/PatternGame'; // A10+
 import FactFindingGame from './components/FactFindingGame'; // New Game
+import ColorFocusGame from './components/ColorFocusGame';
 
 import { AppView, UserProfile, Scenario, EvaluationResult, UserResponse } from './types';
 import { generateScenario, evaluateSession } from './services/geminiService';
@@ -247,7 +248,9 @@ function App() {
         }
         if (gameView === AppView.MINIGAME_VISUALIZATION) newSkills.visualization = Math.max(newSkills.visualization, score);
         if (gameView === AppView.MINIGAME_ORIENTATION) newSkills.orientation = Math.max(newSkills.orientation, score);
-        if (gameView === AppView.MINIGAME_STROOP) newSkills.focus = Math.max(newSkills.focus, score);
+        if (gameView === AppView.MINIGAME_STROOP || gameView === AppView.MINIGAME_FOCUS_TRACK) {
+            newSkills.focus = Math.max(newSkills.focus, score);
+        }
         if (gameView === AppView.MINIGAME_MULTITASK) newSkills.multitasking = Math.max(newSkills.multitasking, score);
         
         // Fact Finding -> Decision Making
@@ -439,6 +442,9 @@ function App() {
                  )}
                  {view === AppView.MINIGAME_STROOP && (
                     <StroopGame onExit={() => changeView(AppView.JOURNEY_MAP)} onComplete={(s) => handleMiniGameComplete(s, 'node-6', AppView.MINIGAME_STROOP)} />
+                 )}
+                 {view === AppView.MINIGAME_FOCUS_TRACK && (
+                    <ColorFocusGame onExit={() => changeView(AppView.MINIGAME_HUB)} onComplete={(s) => handleMiniGameComplete(s, '', AppView.MINIGAME_FOCUS_TRACK)} />
                  )}
                  {view === AppView.MINIGAME_MULTITASK && (
                     <MultitaskGame onExit={() => changeView(AppView.JOURNEY_MAP)} onComplete={(s) => handleMiniGameComplete(s, 'node-7', AppView.MINIGAME_MULTITASK)} />
