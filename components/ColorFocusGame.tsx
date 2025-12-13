@@ -26,6 +26,7 @@ type GateInstance = {
   opened: boolean;
   opening: boolean;
   resolved: boolean;
+  choiceOrder?: ColorSwatch[];
 };
 
 const COLORS: ColorSwatch[] = [
@@ -188,7 +189,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
 
   const [gameState, setGameState] = useState<RunnerState>('intro');
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(1);
+  const [lives, setLives] = useState(3);
   const [activeGate, setActiveGate] = useState<GateInstance | null>(null);
   const [choices, setChoices] = useState<ColorSwatch[]>([]);
   const [distance, setDistance] = useState(0);
@@ -209,11 +210,13 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       setChoices([]);
       return;
     }
-    const distractor = pickColor([front.ink.key]);
-    const inkLeft = Math.random() > 0.5;
-    const orderedChoices = inkLeft ? [front.ink, distractor] : [distractor, front.ink];
+    if (!front.choiceOrder || front.choiceOrder.length !== 2) {
+      const distractor = pickColor([front.ink.key]);
+      const inkLeft = Math.random() > 0.5;
+      front.choiceOrder = inkLeft ? [front.ink, distractor] : [distractor, front.ink];
+    }
     setActiveGate(front);
-    setChoices(orderedChoices);
+    setChoices(front.choiceOrder);
     setMessage('رنگ جوهر نوشته را انتخاب کن تا مانع بالا برود.');
   };
 
@@ -238,6 +241,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       opened: false,
       opening: false,
       resolved: false,
+      choiceOrder: undefined,
     });
     lastSpawnRef.current = gateMesh.position.z;
     syncActiveGate();
@@ -264,10 +268,10 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     speedRef.current = baseSpeed;
     lastSpawnRef.current = -40;
     setScore(0);
-    setLives(1);
+    setLives(3);
     setDistance(0);
     setCleared(0);
-    setMessage('با زدن رنگ جوهر، گیت را باز کن. اشتباه = تصادف');
+    setMessage('با زدن رنگ جوهر، گیت را باز کن. سه جان داری، حواست را جمع کن!');
     gateQueueRef.current.forEach((g) => sceneRef.current?.remove(g.mesh));
     gateQueueRef.current.length = 0;
     spawnGate();
@@ -364,6 +368,27 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     setGameState('finished');
   };
 
+  const loseLife = (reason: string, gateToClear?: GateInstance) => {
+    sfx.playError();
+    setLives((prev) => {
+      const next = Math.max(prev - 1, 0);
+      if (next <= 0) {
+        setMessage(`${reason} جانت تمام شد.`);
+        setGameState('finished');
+      } else {
+        setMessage(`${reason} یک جان از دست رفت. (${toPersianNum(next)}/۳ باقی مانده)`);
+        const target = gateToClear ?? gateQueueRef.current.find((g) => !g.resolved);
+        if (target) {
+          target.resolved = true;
+          sceneRef.current?.remove(target.mesh);
+          gateQueueRef.current = gateQueueRef.current.filter((g) => g.id !== target.id);
+          syncActiveGate();
+        }
+      }
+      return next;
+    });
+  };
+
   const repaintCar = (color: string) => {
     const bodyMat = carRef.current?.userData.bodyMat as THREE.MeshStandardMaterial | undefined;
     const cabinMat = carRef.current?.userData.cabinMat as THREE.MeshStandardMaterial | undefined;
@@ -405,7 +430,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
     if (key === target.ink.key) {
       liftGate(target);
     } else {
-      crash('انتخاب نادرست! خودرو به مانع خورد.');
+      loseLife('انتخاب نادرست! خودرو به مانع خورد.', target);
     }
   };
 
@@ -424,7 +449,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
         gate.mesh.position.y = THREE.MathUtils.lerp(gate.mesh.position.y, 7, 0.06);
       }
       if (!gate.resolved && gate.mesh.position.z > 5) {
-        crash('دیر واکنش دادی! خودرو متوقف شد.');
+        loseLife('دیر واکنش دادی! خودرو به مانع خورد.', gate);
       }
       if (gate.mesh.position.z > 16) {
         sceneRef.current?.remove(gate.mesh);
@@ -514,7 +539,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       </div>
       <h3 className="text-2xl font-black text-slate-900">پایان ران! تمرکزت چطور بود؟</h3>
       <p className="text-slate-500 text-sm max-w-lg">
-        هرچه سریع‌تر رنگ جوهر را پیدا کنی، سرعت بالا می‌رود. با انتخاب اشتباه، خودرو می‌ایستد. دوباره امتحان کن و کمبو بساز.
+        هرچه سریع‌تر رنگ جوهر را پیدا کنی، سرعت بالا می‌رود. با هر اشتباه یک جان از دست می‌دهی و با از دست دادن همه جان‌ها خودرو می‌ایستد. دوباره امتحان کن و کمبو بساز.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl">
         <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm text-right">
@@ -537,16 +562,16 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
         >
           ثبت و خروج
         </button>
-        <button
-          onClick={() => {
-            resetGame();
-            setGameState('playing');
-            setLives(1);
-          }}
-          className="w-full bg-white text-slate-700 border border-slate-200 py-3 rounded-2xl font-bold text-lg hover:bg-slate-50"
-        >
-          تلاش دوباره
-        </button>
+            <button
+              onClick={() => {
+                resetGame();
+                setGameState('playing');
+                setLives(3);
+              }}
+              className="w-full bg-white text-slate-700 border border-slate-200 py-3 rounded-2xl font-bold text-lg hover:bg-slate-50"
+            >
+              تلاش دوباره
+            </button>
       </div>
     </div>
   );
@@ -561,7 +586,7 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
             </div>
             <h2 className="text-2xl font-black text-slate-900">رانر سنجش تمرکز رنگی</h2>
             <p className="text-slate-500 text-sm">
-              خودرو خودکار می‌تازد. کلمه روی مانع را ببین و رنگ جوهر را انتخاب کن. اگر اشتباه بزنی، خودرو متوقف می‌شود.
+              خودرو خودکار می‌تازد. کلمه روی مانع را ببین و رنگ جوهر را انتخاب کن. سه جان داری؛ با هر اشتباه یک جان از دست می‌دهی.
             </p>
             <button
               onClick={() => setGameState('playing')}
@@ -588,11 +613,11 @@ const ColorFocusGame: React.FC<Props> = ({ onExit, onComplete }) => {
       description="یک رانر ایزومتریک بر پایه اثر استروپ: رنگ جوهر نوشته را بزن تا گیت باز شود."
       instructions={[
         'رنگ جوهر نوشته روی مانع را انتخاب کن، نه معنای کلمه را.',
-        'اگر دیر واکنش دهی یا اشتباه بزنی، خودرو متوقف می‌شود.',
+        'اگر دیر واکنش دهی یا اشتباه بزنی، یک جان از دست می‌دهی؛ سه جان داری.',
         'هر گیت درست، سرعت را بالا می‌برد و امتیاز بیشتری می‌دهد.',
       ]}
       icon={<Palette />}
-      stats={{ score, timeLeft: undefined, level: Math.max(1, Math.round(speedRef.current / 5)), combo: cleared, lives, maxLives: 1 }}
+      stats={{ score, timeLeft: undefined, level: Math.max(1, Math.round(speedRef.current / 5)), combo: cleared, lives, maxLives: 3 }}
       onExit={onExit}
       onRestart={() => {
         resetGame();
